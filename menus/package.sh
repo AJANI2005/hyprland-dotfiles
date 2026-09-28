@@ -22,9 +22,13 @@ need foot
 need pacman
 
 run_in_terminal() {
-  foot --hold bash -c '
+  foot --app-id=package-tui bash -c '
     "$@"
     status=$?
+
+    printf "\nPress any key to close..."
+    IFS= read -rsn1
+
     stty sane 2>/dev/null
     exit "$status"
   ' bash "$@"
