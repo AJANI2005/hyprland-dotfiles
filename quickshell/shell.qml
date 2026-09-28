@@ -242,8 +242,8 @@ PanelWindow {
             Text {
                 text: Qt.formatDateTime(
                     systemClock.date,
-                    "HH:mm"
-                )
+                    "ddd d MMM h:mm AP"
+                  )
 
                 color: "#f4f4f5"
 
