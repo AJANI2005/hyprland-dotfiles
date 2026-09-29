@@ -33,6 +33,10 @@ hl.on("hyprland.start",function()
   hl.exec_cmd("mako")
   hl.exec_cmd("qs")
   hl.exec_cmd("awww-daemon")
+  hl.exec_cmd("systemctl start hyprpolkitagent --user")
+
+  -- Apps
+  hl.exec_cmd("morgen &")
 end)
 
 -- Look & Feel

@@ -1,0 +1,24 @@
+services:
+  windows:
+    image: dockurr/windows
+    container_name: windows-vm
+    environment:
+      # VERSION: "11"
+      DISK_SIZE: 10G
+      RAM_SIZE: 4G
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - 8006:8006
+      - 3389:3389/tcp
+      - 3389:3389/udp
+    volumes:
+      - windows:/storage
+      # Custom Win11 ISO
+      - ./windows.iso:/custom.iso
+    restart: always
+    stop_grace_period: 2m
+
