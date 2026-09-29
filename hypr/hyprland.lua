@@ -84,6 +84,7 @@ hl.config({
       hl.dsp.exec_cmd("sleep 1 && hyprctl dispatch 'hl.dsp.dpms({ action = \"off\", monitor = \"\" })' "),
       { description = "Turn Off Monitor", locked = true, repeating = false })
 
+  hl.bind(mainMod.." + F9",hl.dsp.exec_cmd("setsid -f gtk-launch hyprmoncfg &>/dev/null"))
 
 
   -- Screenshots
@@ -135,8 +136,10 @@ hl.config({
   hl.window_rule({name="fix-xwayland-drags",match={class="^$",title="^$",xwayland=true,float=true,fullscreen=false,pin=false},no_focus=true})
   hl.window_rule({name="floating-utilities",match={class="^(org.gnome.Calculator|thunar|mpv|blueman-manager|com.saivert.pwvucontrol)$"},float=true,pin=true})
   hl.window_rule({name="picture-in-picture",match={title="^(Picture-in-Picture)$"},float=true,pin=true,size={400,400}})
-  hl.window_rule({ match={class="^(btop)$"},float=true,pin=true,size={1280,720}})
+  hl.window_rule({ match={class="^(btop|hyprmon)$"},float=true,pin=true,size={1440,900}})
 
-  hl.window_rule({name="floating-menus",match={class="^(fzf-menu-.*)$"},float=true,pin=true,size={800,600}})
-  hl.window_rule({ match={class="^(fzf-menu-package.sh)$"},float=true,pin=true,size={1200,600}})
+  hl.window_rule({name="floating-menus",match={class="^(TUI-.*)$"},float=true,pin=true,size={800,600}})
+  hl.window_rule({ match={class="^(TUI-package.sh)$"},float=true,pin=true,size={1200,600}})
+
+  -- Match bluetui,mimetui etc
   hl.window_rule({name="floating-tuis",match={class="^(.*tui.*)$"},float=true,pin=true})

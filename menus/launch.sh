@@ -1,4 +1,4 @@
 
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-exec foot --app-id=fzf-menu-$1 -e "$SCRIPT_DIR/$1"
+exec foot --app-id=TUI-$1 -e "$SCRIPT_DIR/$1"
