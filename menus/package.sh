@@ -112,7 +112,7 @@ install_aur() {
   [[ -z $query ]] && return
 
   package=$(
-    paru -Ssa "$query" |
+    paru -Ssaq "$query" |
       fzf --reverse --preview 'aur_preview {}'
   )
 

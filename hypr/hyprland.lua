@@ -50,7 +50,9 @@ hl.config({
     scrolling={fullscreen_on_one_column=true},
     input={kb_layout="us",repeat_rate=25,repeat_delay=300,
     follow_mouse=1,sensitivity=0,touchpad={natural_scroll=true}},
-    misc={disable_splash_rendering = true,force_default_wallpaper=1,disable_hyprland_logo=true},
+    misc={disable_splash_rendering = true,force_default_wallpaper=1,disable_hyprland_logo=true,
+    mouse_move_enables_dpms=true, key_press_enables_dpms=true
+    },
   })
 
   hl.gesture({fingers=3,direction="horizontal",action="workspace"})
@@ -72,6 +74,17 @@ hl.config({
   -- System
   hl.bind(mainMod.." + SHIFT + M",hl.dsp.exit())
   hl.bind(mainMod.." + SHIFT + Escape",hl.dsp.exec_cmd("hyprlock"))
+
+  -- ASUS 
+  --
+  local asus_profile_cmd='asusctl profile next && notify-send "ASUS Profile" "$(asusctl profile get | head -n1)"'
+
+  hl.bind(mainMod.." + F5",hl.dsp.exec_cmd(asus_profile_cmd))
+  hl.bind( mainMod .. " + F6",
+      hl.dsp.exec_cmd("sleep 1 && hyprctl dispatch 'hl.dsp.dpms({ action = \"off\", monitor = \"\" })' "),
+      { description = "Turn Off Monitor", locked = true, repeating = false })
+
+
 
   -- Screenshots
   hl.bind(mainMod.." + S",hl.dsp.exec_cmd(screenshot_region))
