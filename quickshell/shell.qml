@@ -7,6 +7,7 @@ import Quickshell.Hyprland
 import Quickshell.Services.SystemTray
 import "panels"
 
+
 PanelWindow {
     id: root
 
@@ -22,9 +23,153 @@ PanelWindow {
     color: "#09090b"
     exclusiveZone: 28
 
-    property string volume: "VOL 0%"
-    property string bright: "BRT 0%"
-    property string battery: "BAT 0%"
+
+    // ------------------------------------------------------------
+    // Colors
+    // ------------------------------------------------------------
+
+    property color moduleBg: "#18181b"
+    property color labelBg: "#27272a"
+    property color hoverBg: "#303036"
+
+    property color labelColor: "#a1a1aa"
+    property color textColor: "#e4e4e7"
+    property color mutedColor: "#71717a"
+
+    property color activeColor: "#f87171"
+    property color inactiveColor: "#52525b"
+
+
+    // ------------------------------------------------------------
+    // State
+    // ------------------------------------------------------------
+
+    property string volume: "0%"
+    property string bright: "0%"
+    property string battery: "0%"
+    property string network: "OFF"
+    property string bluetooth: "OFF"
+
+    property bool caffeine: false
+
+
+    // ------------------------------------------------------------
+    // Reusable module
+    // ------------------------------------------------------------
+
+    component Module: Item {
+        id: module
+
+        property string label
+        property string value
+
+        signal clicked()
+
+        implicitWidth: content.width
+        implicitHeight: 24
+
+        Row {
+            id: content
+
+            height: 24
+            spacing: 1
+
+            Rectangle {
+                width: labelText.implicitWidth + 10
+                height: 24
+
+                color: root.labelBg
+
+                Text {
+                    id: labelText
+
+                    anchors.centerIn: parent
+
+                    text: module.label
+
+                    color: root.labelColor
+
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 12
+                    font.bold: true
+                }
+            }
+
+            Rectangle {
+                width: valueText.implicitWidth + 10
+                height: 24
+
+                color: root.moduleBg
+
+                Text {
+                    id: valueText
+
+                    anchors.centerIn: parent
+
+                    text: module.value
+
+                    color: root.textColor
+
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 12
+                }
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+
+            cursorShape: Qt.PointingHandCursor
+
+            onClicked:
+                module.clicked()
+        }
+    }
+
+
+    // ------------------------------------------------------------
+    // Caffeine
+    // ------------------------------------------------------------
+
+    component Caffeine: Rectangle {
+        id: caffeine
+
+        property bool active: root.caffeine
+
+        width: 28
+        height: 24
+
+        color: active
+            ? root.activeColor
+            : root.moduleBg
+
+        Text {
+            anchors.centerIn: parent
+
+            text: "󰅶"
+
+            color: active
+                ? "#09090b"
+                : root.textColor
+
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 15
+        }
+
+        MouseArea {
+            anchors.fill: parent
+
+            cursorShape: Qt.PointingHandCursor
+
+            onClicked:
+                caffeineToggle.running = true
+        }
+    }
+
+
+    // ------------------------------------------------------------
+    // Volume
+    // ------------------------------------------------------------
 
     Process {
         id: volumeProc
@@ -36,19 +181,21 @@ PanelWindow {
 
         stdout: StdioCollector {
             onStreamFinished: {
-                let m = this.text.match(
+                let match = this.text.match(
                     /Volume:\s+([0-9.]+)/
                 )
 
-                if (m) {
+                if (match)
                     root.volume =
-                        "VOL " +
-                        Math.round(m[1] * 100) +
-                        "%"
-                }
+                        Math.round(match[1] * 100) + "%"
             }
         }
     }
+
+
+    // ------------------------------------------------------------
+    // Brightness
+    // ------------------------------------------------------------
 
     Process {
         id: brightProc
@@ -60,23 +207,160 @@ PanelWindow {
 
         stdout: StdioCollector {
             onStreamFinished:
-                root.bright = "BRT " + this.text.trim()
+                root.bright = this.text.trim()
         }
     }
+
+
+    // ------------------------------------------------------------
+    // Battery
+    // ------------------------------------------------------------
 
     Process {
         id: batteryProc
 
         command: [
             "bash", "-c",
-            "upower -i $(upower -e | grep 'BAT') | grep -E 'percentage:' | awk '{print $2}'"
+            "upower -i $(upower -e | grep 'BAT') | " +
+            "grep -E 'percentage:' | awk '{print $2}'"
         ]
 
         stdout: StdioCollector {
             onStreamFinished:
-                root.battery = "BAT " + this.text.trim()
+                root.battery = this.text.trim()
         }
     }
+
+
+    // ------------------------------------------------------------
+    // Network
+    // ------------------------------------------------------------
+
+    Process {
+        id: networkProc
+
+        command: [
+            "bash", "-c",
+            "nmcli -t -f NAME,TYPE connection show --active | " +
+            "awk -F: '$2 == \"802-11-wireless\" || " +
+            "$2 == \"ethernet\" {print $1; exit}'"
+        ]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let name = this.text.trim()
+
+                root.network =
+                    name.length > 0
+                        ? name
+                        : "OFF"
+            }
+        }
+    }
+
+
+    // ------------------------------------------------------------
+    // Bluetooth
+    // ------------------------------------------------------------
+
+    Process {
+        id: bluetoothProc
+
+        command: [
+            "bash", "-c",
+            "bluetoothctl show | " +
+            "grep -q 'Powered: yes' && echo ON || echo OFF"
+        ]
+
+        stdout: StdioCollector {
+            onStreamFinished:
+                root.bluetooth = this.text.trim()
+        }
+    }
+
+
+    // ------------------------------------------------------------
+    // Launchers
+    // ------------------------------------------------------------
+
+    Process {
+        id: volumeLaunch
+
+        command: [
+            "setsid",
+            "-f",
+            "pwvucontrol"
+        ]
+    }
+
+    Process {
+        id: networkLaunch
+
+        command: [
+            "setsid",
+            "-f",
+            "foot",
+            "--app-id=nmtui",
+            "-e",
+            "nmtui"
+        ]
+    }
+
+    Process {
+        id: bluetoothLaunch
+
+        command: [
+            "setsid",
+            "-f",
+            "foot",
+            "--app-id=bluetui",
+            "-e",
+            "bluetui"
+        ]
+    }
+
+
+    // ------------------------------------------------------------
+    // Caffeine
+    // ------------------------------------------------------------
+
+    Process {
+        id: caffeineToggle
+
+        command: [
+            "bash",
+            "-c",
+            "if pgrep -x hypridle >/dev/null; then " +
+            "pkill -x hypridle; " +
+            "else " +
+            "hypridle >/dev/null 2>&1 & " +
+            "fi"
+        ]
+
+        onExited:
+            caffeineState.running = true
+    }
+
+    Process {
+        id: caffeineState
+
+        command: [
+            "bash",
+            "-c",
+            "pgrep -x hypridle >/dev/null && echo ON || echo OFF"
+        ]
+
+        stdout: StdioCollector {
+            onStreamFinished:
+                root.caffeine =
+                    this.text.trim() === "ON"
+        }
+    }
+
+
+    // ------------------------------------------------------------
+    // Update everything
+    // ------------------------------------------------------------
 
     Timer {
         interval: 1000
@@ -87,14 +371,49 @@ PanelWindow {
             volumeProc.running = true
             brightProc.running = true
             batteryProc.running = true
+            networkProc.running = true
+            bluetoothProc.running = true
+            caffeineState.running = true
         }
     }
 
+    Component.onCompleted: {
+        volumeProc.running = true
+        brightProc.running = true
+        batteryProc.running = true
+        networkProc.running = true
+        bluetoothProc.running = true
+        caffeineState.running = true
+    }
+
+
+    // ------------------------------------------------------------
+    // Clock
+    // ------------------------------------------------------------
+
+    SystemClock {
+        id: systemClock
+
+        precision: SystemClock.Minutes
+    }
+
+
+    // ------------------------------------------------------------
+    // Bar
+    // ------------------------------------------------------------
+
     RowLayout {
         anchors.fill: parent
+
         anchors.leftMargin: 8
         anchors.rightMargin: 8
+
         spacing: 12
+
+
+        // --------------------------------------------------------
+        // Workspaces
+        // --------------------------------------------------------
 
         Row {
             spacing: 10
@@ -114,10 +433,10 @@ PanelWindow {
                     text: index + 1
 
                     color: active
-                        ? "#ef4444"
+                        ? root.activeColor
                         : ws
-                            ? "#a1a1aa"
-                            : "#3f3f46"
+                            ? root.labelColor
+                            : root.inactiveColor
 
                     font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: 12
@@ -135,98 +454,111 @@ PanelWindow {
             }
         }
 
+
+        // --------------------------------------------------------
+        // Caffeine
+        // --------------------------------------------------------
+
+        Caffeine {}
+
+
+        // --------------------------------------------------------
+        // Window title
+        // --------------------------------------------------------
+
         Text {
             Layout.fillWidth: true
 
             text: Hyprland.focusedToplevel?.title ?? ""
-            color: "#71717a"
+
+            color: root.mutedColor
 
             font.family: "JetBrainsMono Nerd Font"
             font.pixelSize: 12
+
             elide: Text.ElideRight
         }
 
+
+        // --------------------------------------------------------
+        // Right side
+        // --------------------------------------------------------
+
         Row {
-            spacing: 12
+            spacing: 2
 
-            Text {
-                text: root.volume
-                color: "#a1a1aa"
 
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 12
-            }
+            // ----------------------------------------------------
+            // System tray
+            // ----------------------------------------------------
 
-            Text {
-                text: root.bright
-                color: "#a1a1aa"
+            Rectangle {
+                width: trayContent.width + 12
+                height: 24
 
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 12
-            }
+                color: "transparent"
 
-            Text {
-                text: root.battery
-                color: "#a1a1aa"
+                Row {
+                    id: trayContent
 
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 12
-            }
+                    anchors.centerIn: parent
 
-            Row {
-                spacing: 5
+                    spacing: 5
 
-                Repeater {
-                    model: SystemTray.items
+                    Repeater {
+                        model: SystemTray.items
 
-                    delegate: Item {
-                        id: trayItem
+                        delegate: Item {
+                            id: trayItem
 
-                        width: 16
-                        height: 16
+                            width: 16
+                            height: 16
 
-                        Image {
-                            anchors.fill: parent
+                            Image {
+                                anchors.fill: parent
 
-                            source: modelData.icon
-                            sourceSize: Qt.size(16, 16)
-                            fillMode: Image.PreserveAspectFit
-                        }
+                                source: modelData.icon
 
-                        PopupWindow {
-                            id: trayMenuWindow
+                                sourceSize:
+                                    Qt.size(16, 16)
 
-                            implicitWidth: 1
-                            implicitHeight: 1
+                                fillMode:
+                                    Image.PreserveAspectFit
+                            }
 
-                            color: "transparent"
+                            MouseArea {
+                                anchors.fill: parent
 
-                            anchor.item: trayItem
-                        }
+                                acceptedButtons:
+                                    Qt.LeftButton |
+                                    Qt.MiddleButton |
+                                    Qt.RightButton
 
-                        MouseArea {
-                            anchors.fill: parent
+                                onClicked: mouse => {
+                                    if (
+                                        mouse.button ===
+                                        Qt.LeftButton
+                                    ) {
+                                        modelData.activate()
+                                    }
 
-                            acceptedButtons:
-                                Qt.LeftButton |
-                                Qt.MiddleButton |
-                                Qt.RightButton
+                                    else if (
+                                        mouse.button ===
+                                        Qt.MiddleButton
+                                    ) {
+                                        modelData.secondaryActivate()
+                                    }
 
-                            onClicked: mouse => {
-                                if (mouse.button === Qt.LeftButton) {
-                                    modelData.activate()
-                                } else if (
-                                    mouse.button === Qt.MiddleButton
-                                ) {
-                                    modelData.secondaryActivate()
-                                } else if (
-                                    mouse.button === Qt.RightButton
-                                ) {
-                                    modelData.display(
-                                        root,
-                                        root.width,
-                                        root.y
-                                    )
+                                    else if (
+                                        mouse.button ===
+                                        Qt.RightButton
+                                    ) {
+                                        modelData.display(
+                                            root,
+                                            root.width,
+                                            root.y
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -234,21 +566,77 @@ PanelWindow {
                 }
             }
 
-            SystemClock {
-                id: systemClock
-                precision: SystemClock.Minutes
+
+            // ----------------------------------------------------
+            // Modules
+            // ----------------------------------------------------
+
+            Module {
+                label: "VOL"
+                value: root.volume
+
+                onClicked: {
+                    if (!volumeLaunch.running)
+                        volumeLaunch.running = true
+                }
             }
 
-            Text {
-                text: Qt.formatDateTime(
-                    systemClock.date,
-                    "ddd d MMM h:mm AP"
-                  )
+            Module {
+                label: "BRT"
+                value: root.bright
+            }
 
-                color: "#f4f4f5"
+            Module {
+                label: "BAT"
+                value: root.battery
+            }
 
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 12
+            Module {
+                label: "NET"
+                value: root.network
+
+                onClicked: {
+                    if (!networkLaunch.running)
+                        networkLaunch.running = true
+                }
+            }
+
+            Module {
+                label: "BT"
+                value: root.bluetooth
+
+                onClicked: {
+                    if (!bluetoothLaunch.running)
+                        bluetoothLaunch.running = true
+                }
+            }
+
+
+            // ----------------------------------------------------
+            // Clock
+            // ----------------------------------------------------
+
+            Rectangle {
+                width: clockText.width + 16
+                height: 24
+
+                color: root.moduleBg
+
+                Text {
+                    id: clockText
+
+                    anchors.centerIn: parent
+
+                    text: Qt.formatDateTime(
+                        systemClock.date,
+                        "ddd d MMM h:mm AP"
+                    )
+
+                    color: root.textColor
+
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 12
+                }
             }
         }
     }

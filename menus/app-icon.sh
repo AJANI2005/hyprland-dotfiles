@@ -212,6 +212,7 @@ declare -a icons=(
 
     # Virtualization
     '(qemu|virtual machine|virt manager|virtualbox|vmware):󰇧'
+    '(windows):󰍲'
 
     # Package managers
     '(pacman|paru|yay|apt|dnf|brew|homebrew|flatpak|snap):󰏖'

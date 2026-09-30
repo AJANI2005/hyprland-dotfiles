@@ -36,12 +36,19 @@ list_apps() {
 
 selection=$(
     list_apps |
-    fzf \
-        --height=100% \
-        --layout=reverse \
-        --prompt='Launch> ' \
-        --delimiter=$'\037' \
-        --with-nth=1
+  fzf \
+    --height=100% \
+    --layout=reverse \
+    --border=none \
+    --margin=1 \
+    --padding=1 \
+    --prompt=' 󰜴 ' \
+    --pointer='▌ ' \
+    --marker='┃ ' \
+    --info=hidden \
+    --no-scrollbar \
+    --delimiter=$'\037' \
+    --with-nth=1
 )
 
 [ -n "$selection" ] || exit 0

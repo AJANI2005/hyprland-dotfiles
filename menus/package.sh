@@ -2,6 +2,7 @@
 
 set -u
 
+
 TAG_PACMAN="󰮯"
 TAG_AUR="󰊢"
 TAG_FLATPAK="󰏗"
@@ -11,36 +12,36 @@ ICON_UNINSTALL="󰆴"
 ICON_UPDATE="󰚰"
 ICON_CLEAN="󰩹"
 
+
+# ── Helpers ──────────────────────────────────────────
+
 run() {
   foot --app-id=package-tui bash -c '
     "$@"
     status=$?
+
     printf "\nPress any key to close..."
     read -rsn1
+
     exit "$status"
   ' bash "$@"
 }
 
 pick() {
-  local header=$1
-  shift
-
   printf '%s\n' "$@" |
     fzf \
-      --reverse \
-      --header-first \
-      --header="  $header" \
-      --prompt="  > " \
-      --pointer="󰜴 " \
-      --marker="󰄬 " \
-      --border=rounded \
-      --padding=1 \
-      --margin=1 \
       --height=100% \
-      --layout=reverse \
-      --info=inline
+      --reverse \
+      --border=none \
+      --margin=1 \
+      --prompt="> " \
+      --pointer="▌ " \
+      --marker="┃ " \
+      --info=hidden
 }
 
+
+# ── Previews ─────────────────────────────────────────
 
 pacman_preview() {
   pacman -Q "$1" &>/dev/null &&
@@ -62,6 +63,7 @@ aur_preview() {
 
 export -f pacman_preview aur_preview
 
+
 # ── Pacman ───────────────────────────────────────────
 
 install_pacman() {
@@ -69,7 +71,9 @@ install_pacman() {
 
   package=$(
     pacman -Ssq |
-      fzf --reverse --preview 'pacman_preview {}'
+      fzf \
+        --reverse \
+        --preview 'pacman_preview {}'
   )
 
   [[ -n $package ]] &&
@@ -81,7 +85,9 @@ uninstall_pacman() {
 
   package=$(
     pacman -Qqe |
-      fzf --reverse --preview 'pacman -Qi {}'
+      fzf \
+        --reverse \
+        --preview 'pacman -Qi {}'
   )
 
   [[ -n $package ]] &&
@@ -94,6 +100,7 @@ update_pacman() {
 
 cleanup_pacman() {
   local orphans
+
   orphans=$(pacman -Qdtq)
 
   if [[ -n $orphans ]]; then
@@ -102,6 +109,7 @@ cleanup_pacman() {
     run bash -c 'printf "No orphan packages found.\n"'
   fi
 }
+
 
 # ── AUR ──────────────────────────────────────────────
 
@@ -113,7 +121,9 @@ install_aur() {
 
   package=$(
     paru -Ssaq "$query" |
-      fzf --reverse --preview 'aur_preview {}'
+      fzf \
+        --reverse \
+        --preview 'aur_preview {}'
   )
 
   [[ -n $package ]] &&
@@ -125,7 +135,9 @@ uninstall_aur() {
 
   package=$(
     paru -Qmq |
-      fzf --reverse --preview 'paru -Qi {}'
+      fzf \
+        --reverse \
+        --preview 'paru -Qi {}'
   )
 
   [[ -n $package ]] &&
@@ -139,6 +151,7 @@ update_aur() {
 cleanup_aur() {
   run paru -Sc
 }
+
 
 # ── Flatpak ──────────────────────────────────────────
 
@@ -178,6 +191,7 @@ cleanup_flatpak() {
   run flatpak uninstall --unused
 }
 
+
 # ── All ──────────────────────────────────────────────
 
 update_all() {
@@ -203,6 +217,7 @@ cleanup_all() {
   '
 }
 
+
 # ── Menus ────────────────────────────────────────────
 
 declare -A actions=(
@@ -218,10 +233,13 @@ declare -A managers=(
   ["$TAG_FLATPAK Flatpak"]="flatpak"
 )
 
+
+# ── Main loop ────────────────────────────────────────
+
 while :; do
   clear
 
-  selected=$(pick "Actions" "${!actions[@]}")
+  selected=$(pick "${!actions[@]}")
   [[ -z $selected ]] && exit
 
   action=${actions[$selected]}
@@ -235,7 +253,7 @@ while :; do
   [[ $action == update || $action == cleanup ]] &&
     menu+=("$action all")
 
-  selected=$(pick "$selected" "${menu[@]}")
+  selected=$(pick "${menu[@]}")
   [[ -z $selected ]] && continue
 
   manager=${managers[$selected]:-all}
@@ -260,4 +278,3 @@ while :; do
     all:cleanup)       cleanup_all ;;
   esac
 done
-
