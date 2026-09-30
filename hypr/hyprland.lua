@@ -152,40 +152,24 @@ hl.window_rule({name="floating-tuis",match={class="^(.*tui.*)$"},float=true,pin=
 
 
 -- Curves
-hl.curve("md3_decel", { type = "bezier", points = { {0.05, 0.7}, {0.1, 1} } })
-hl.curve("md3_accel", { type = "bezier", points = { {0.3, 0}, {0.8, 0.15} } })
-hl.curve("hyprnostretch", { type = "bezier", points = { {0.05, 0.9}, {0.1, 1.0} } })
-hl.curve("menu_decel", { type = "bezier", points = { {0.1, 1}, {0, 1} } })
-hl.curve("menu_accel", { type = "bezier", points = { {0.38, 0.04}, {1, 0.07} } })
-hl.curve("linear", { type = "bezier", points = { {0, 0}, {1, 1} } })
+hl.curve("easeOutQuint", { type = "bezier", points = { { 0.23, 1 }, { 0.32, 1 } } })
+hl.curve("easeInOutCubic", { type = "bezier", points = { { 0.65, 0.05 }, { 0.36, 1 } } })
+hl.curve("linear", { type = "bezier", points = { { 0, 0 }, { 1, 1 } } })
+hl.curve("almostLinear", { type = "bezier", points = { { 0.5, 0.5 }, { 0.75, 1.0 } } })
+hl.curve("quick", { type = "bezier", points = { { 0.15, 0 }, { 0.1, 1 } } })
 
--- Windows
-hl.animation({ leaf = "windows", enabled = true, speed = 3, bezier = "hyprnostretch", style = "popin 80%" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 3, bezier = "md3_decel", style = "popin 75%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 2, bezier = "md3_accel", style = "popin 75%" })
-hl.animation({ leaf = "windowsMove", enabled = false })
-
--- Fade
-hl.animation({ leaf = "fade", enabled = true, speed = 2.5, bezier = "md3_decel" })
-hl.animation({ leaf = "fadeIn", enabled = true, speed = 2, bezier = "md3_decel" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.5, bezier = "md3_accel" })
-
--- Layers
-hl.animation({ leaf = "layers", enabled = true, speed = 3, bezier = "md3_decel" })
-hl.animation({ leaf = "layersIn", enabled = true, speed = 2.5, bezier = "menu_decel", style = "slide" })
-hl.animation({ leaf = "layersOut", enabled = true, speed = 1.6, bezier = "menu_accel" })
-
--- Layer fades
-hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 2, bezier = "menu_decel" })
-hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1.5, bezier = "menu_accel" })
-
--- Workspaces
-hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "menu_decel", style = "slidefade 10%" })
-hl.animation({ leaf = "workspacesIn", enabled = true, speed = 3, bezier = "menu_decel", style = "slidefade 10%" })
-hl.animation({ leaf = "workspacesOut", enabled = true, speed = 2, bezier = "menu_accel", style = "slidefade 10%" })
-
--- Border
-hl.animation({ leaf = "border", enabled = true, speed = 3, bezier = "md3_decel" })
-
--- Zoom
-hl.animation({ leaf = "zoomFactor", enabled = true, speed = 5, bezier = "md3_decel" })
+hl.animation({ leaf = "global", enabled = true, speed = 10, bezier = "default" })
+hl.animation({ leaf = "border", enabled = true, speed = 5, bezier = "easeOutQuint" })
+hl.animation({ leaf = "windows", enabled = true, speed = 3, bezier = "easeOutQuint" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 4, bezier = "easeOutQuint", style = "popin 60%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 2, bezier = "linear", style = "popin 60%" })
+hl.animation({ leaf = "fadeIn", enabled = true, speed = 1, bezier = "almostLinear" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 1, bezier = "almostLinear" })
+hl.animation({ leaf = "fade", enabled = true, speed = 3, bezier = "quick" })
+hl.animation({ leaf = "fadeSwitch", enabled = false })
+hl.animation({ leaf = "layers", enabled = true, speed = 3, bezier = "easeOutQuint" })
+hl.animation({ leaf = "layersIn", enabled = true, speed = 4, bezier = "easeOutQuint", style = "fade" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 1.5, bezier = "linear", style = "fade" })
+hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 1.5, bezier = "almostLinear" })
+hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1.3, bezier = "almostLinear" })
+hl.animation({ leaf = "workspaces", enabled = false })
