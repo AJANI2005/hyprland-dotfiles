@@ -144,6 +144,7 @@ hl.window_rule({ match={class="^(btop|hyprmon)$"},float=true,pin=true,size={1440
 
 hl.window_rule({ match={class="^(tui-package.sh)$"},float=true,pin=true,size={1200,600}})
 hl.window_rule({ match={class="^(tui-apps.sh)$"},float=true,pin=true,size={500,800}})
+hl.window_rule({ match={class="^(tui-power.sh)$"},float=true,pin=true,size={300,300}})
 
 -- Match bluetui,mimetui etc
 hl.window_rule({name="floating-tuis",match={class="^(.*tui.*)$"},float=true,pin=true})
