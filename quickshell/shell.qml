@@ -45,7 +45,10 @@ PanelWindow {
   property bool micMuted: false
   property bool screenSharing: false
 
+  // ============================================================
   // Reusable module
+  // ============================================================
+
   component Module: Item {
     id: module
 
@@ -104,20 +107,21 @@ PanelWindow {
       cursorShape: Qt.PointingHandCursor
 
       onClicked:
-      module.clicked()
+        module.clicked()
     }
   }
 
+  // ============================================================
   // Caffeine
+  // ============================================================
+
   component Caffeine: Rectangle {
     id: caffeineModule
 
     width: 28
     height: 24
 
-    color: root.caffeine
-    ? root.activeColor
-    : root.moduleBg
+    color: "transparent"
 
     Text {
       anchors.centerIn: parent
@@ -125,8 +129,8 @@ PanelWindow {
       text: "󰅶"
 
       color: root.caffeine
-      ? "#09090b"
-      : root.textColor
+        ? root.textColor
+        : root.activeColor
 
       font.family: "JetBrainsMono Nerd Font"
       font.pixelSize: 15
@@ -137,31 +141,32 @@ PanelWindow {
       cursorShape: Qt.PointingHandCursor
 
       onClicked:
-      caffeineToggle.running = true
+        caffeineToggle.running = true
     }
   }
 
+  // ============================================================
   // Microphone mute
+  // ============================================================
+
   component MicMute: Rectangle {
     id: micModule
 
     width: 28
     height: 24
 
-    color: root.micMuted
-    ? root.activeColor
-    : root.moduleBg
+    color: "transparent"
 
     Text {
       anchors.centerIn: parent
 
       text: root.micMuted
-      ? "󰍭"
-      : "󰍬"
+        ? "󰍭"
+        : "󰍬"
 
       color: root.micMuted
-      ? "#09090b"
-      : root.textColor
+        ? root.activeColor
+        : root.textColor
 
       font.family: "JetBrainsMono Nerd Font"
       font.pixelSize: 15
@@ -172,31 +177,39 @@ PanelWindow {
       cursorShape: Qt.PointingHandCursor
 
       onClicked:
-      micMuteToggle.running = true
+        micMuteToggle.running = true
     }
   }
 
+  // ============================================================
   // Screen sharing
+  // ============================================================
+
   component ScreenShare: Rectangle {
+    id: screenShareModule
+
     visible: root.screenSharing
 
     width: root.screenSharing ? 28 : 0
     height: 24
 
-    color: root.activeColor
+    color: "transparent"
 
     Text {
       anchors.centerIn: parent
 
       text: "󰍹"
-      color: "#09090b"
+      color: root.activeColor
 
       font.family: "JetBrainsMono Nerd Font"
       font.pixelSize: 15
     }
   }
 
+  // ============================================================
   // Volume
+  // ============================================================
+
   Process {
     id: volumeProc
 
@@ -218,13 +231,16 @@ PanelWindow {
         let match = output.match(/Volume:\s+([0-9.]+)/)
 
         if (match)
-        root.volume =
-        Math.round(match[1] * 100) + "%"
+          root.volume =
+            Math.round(match[1] * 100) + "%"
       }
     }
   }
 
+  // ============================================================
   // Brightness
+  // ============================================================
+
   Process {
     id: brightProc
 
@@ -236,11 +252,14 @@ PanelWindow {
 
     stdout: StdioCollector {
       onStreamFinished:
-      root.bright = this.text.trim()
+        root.bright = this.text.trim()
     }
   }
 
+  // ============================================================
   // Battery
+  // ============================================================
+
   Process {
     id: batteryProc
 
@@ -253,11 +272,14 @@ PanelWindow {
 
     stdout: StdioCollector {
       onStreamFinished:
-      root.battery = this.text.trim()
+        root.battery = this.text.trim()
     }
   }
 
+  // ============================================================
   // Network
+  // ============================================================
+
   Process {
     id: networkProc
 
@@ -274,14 +296,17 @@ PanelWindow {
         let name = this.text.trim()
 
         root.network =
-        name.length > 0
-        ? name
-        : "OFF"
+          name.length > 0
+          ? name
+          : "OFF"
       }
     }
   }
 
+  // ============================================================
   // Bluetooth
+  // ============================================================
+
   Process {
     id: bluetoothProc
 
@@ -294,11 +319,14 @@ PanelWindow {
 
     stdout: StdioCollector {
       onStreamFinished:
-      root.bluetooth = this.text.trim()
+        root.bluetooth = this.text.trim()
     }
   }
 
+  // ============================================================
   // Microphone state
+  // ============================================================
+
   Process {
     id: micState
 
@@ -310,12 +338,15 @@ PanelWindow {
 
     stdout: StdioCollector {
       onStreamFinished:
-      root.micMuted =
-      this.text.includes("[MUTED]")
+        root.micMuted =
+          this.text.includes("[MUTED]")
     }
   }
 
+  // ============================================================
   // Screen sharing state
+  // ============================================================
+
   Process {
     id: screenShareState
 
@@ -329,29 +360,31 @@ PanelWindow {
 
     stdout: StdioCollector {
       onStreamFinished:
-      root.screenSharing =
-      this.text.trim() === "ON"
+        root.screenSharing =
+          this.text.trim() === "ON"
     }
   }
 
+  // ============================================================
   // Volume launcher
+  // ============================================================
+
   Process {
     id: volumeLaunch
 
     command: [
-      "setsid",
-      "-f",
       "pwvucontrol"
     ]
   }
 
+  // ============================================================
   // Network launcher
+  // ============================================================
+
   Process {
     id: networkLaunch
 
     command: [
-      "setsid",
-      "-f",
       "foot",
       "--app-id=nmtui",
       "-e",
@@ -359,13 +392,14 @@ PanelWindow {
     ]
   }
 
+  // ============================================================
   // Bluetooth launcher
+  // ============================================================
+
   Process {
     id: bluetoothLaunch
 
     command: [
-      "setsid",
-      "-f",
       "foot",
       "--app-id=bluetui",
       "-e",
@@ -373,7 +407,10 @@ PanelWindow {
     ]
   }
 
+  // ============================================================
   // Caffeine toggle
+  // ============================================================
+
   Process {
     id: caffeineToggle
 
@@ -388,10 +425,13 @@ PanelWindow {
     ]
 
     onExited:
-    caffeineState.running = true
+      caffeineState.running = true
   }
 
+  // ============================================================
   // Caffeine state
+  // ============================================================
+
   Process {
     id: caffeineState
 
@@ -403,12 +443,15 @@ PanelWindow {
 
     stdout: StdioCollector {
       onStreamFinished:
-      root.caffeine =
-      this.text.trim() === "ON"
+        root.caffeine =
+          this.text.trim() === "ON"
     }
   }
 
+  // ============================================================
   // Microphone toggle
+  // ============================================================
+
   Process {
     id: micMuteToggle
 
@@ -420,10 +463,13 @@ PanelWindow {
     ]
 
     onExited:
-    micState.running = true
+      micState.running = true
   }
 
+  // ============================================================
   // Update everything
+  // ============================================================
+
   Timer {
     interval: 1000
     running: true
@@ -452,14 +498,20 @@ PanelWindow {
     screenShareState.running = true
   }
 
+  // ============================================================
   // Clock
+  // ============================================================
+
   SystemClock {
     id: systemClock
 
     precision: SystemClock.Minutes
   }
 
-  // Bar
+  // ============================================================
+  // Main bar
+  // ============================================================
+
   RowLayout {
     anchors.fill: parent
 
@@ -468,7 +520,10 @@ PanelWindow {
 
     spacing: 12
 
-    // Workspaces
+    // ----------------------------------------------------------
+    // Workspaces - LEFT
+    // ----------------------------------------------------------
+
     Row {
       spacing: 10
 
@@ -477,20 +532,20 @@ PanelWindow {
 
         Text {
           property bool active:
-          Hyprland.focusedWorkspace?.id === index + 1
+            Hyprland.focusedWorkspace?.id === index + 1
 
           property var ws:
-          Hyprland.workspaces.values.find(
-            w => w.id === index + 1
-          )
+            Hyprland.workspaces.values.find(
+              w => w.id === index + 1
+            )
 
           text: index + 1
 
           color: active
-          ? root.activeColor
-          : ws
-          ? root.labelColor
-          : root.inactiveColor
+            ? root.activeColor
+            : ws
+            ? root.labelColor
+            : root.inactiveColor
 
           font.family: "JetBrainsMono Nerd Font"
           font.pixelSize: 12
@@ -500,29 +555,23 @@ PanelWindow {
             anchors.fill: parent
 
             onClicked:
-            Hyprland.dispatch(
-              "workspace " + (index + 1)
-            )
+              Hyprland.dispatch(
+                "workspace " + (index + 1)
+              )
           }
         }
       }
     }
 
-    // Toggles
-    Row {
-      spacing: 0
+    // ----------------------------------------------------------
+    // Window title - CENTER AREA
+    // ----------------------------------------------------------
 
-      Caffeine {}
-      MicMute {}
-      ScreenShare {}
-    }
-
-    // Window title
     Text {
       Layout.fillWidth: true
 
       text:
-      Hyprland.focusedToplevel?.title ?? ""
+        Hyprland.focusedToplevel?.title ?? ""
 
       color: root.mutedColor
 
@@ -532,11 +581,17 @@ PanelWindow {
       elide: Text.ElideRight
     }
 
+    // ----------------------------------------------------------
     // Right side
+    // ----------------------------------------------------------
+
     Row {
       spacing: 2
 
+      // --------------------------------------------------------
       // System tray
+      // --------------------------------------------------------
+
       Rectangle {
         width: trayContent.width + 12
         height: 24
@@ -565,16 +620,16 @@ PanelWindow {
                 sourceSize: Qt.size(16, 16)
 
                 fillMode:
-                Image.PreserveAspectFit
+                  Image.PreserveAspectFit
               }
 
               MouseArea {
                 anchors.fill: parent
 
                 acceptedButtons:
-                Qt.LeftButton |
-                Qt.MiddleButton |
-                Qt.RightButton
+                  Qt.LeftButton |
+                  Qt.MiddleButton |
+                  Qt.RightButton
 
                 onClicked: mouse => {
                   if (mouse.button === Qt.LeftButton) {
@@ -586,81 +641,122 @@ PanelWindow {
 
                     modelData.display(
                       root,
-                      Math.round(pos.x + trayItem.width / 2),
-                      Math.round(pos.y + trayItem.height)
+                      Math.round(
+                        pos.x + trayItem.width / 2
+                      ),
+                      Math.round(
+                        pos.y + trayItem.height
+                      )
                     )
                   }
-                }                            }
+                }
               }
             }
           }
         }
+      }
 
-        // Modules
-        Module {
-          label: "VOL"
-          value: root.volume
+      // --------------------------------------------------------
+      // Volume
+      // --------------------------------------------------------
 
-          onClicked: {
-            if (!volumeLaunch.running)
+      Module {
+        label: "VOL"
+        value: root.volume
+
+        onClicked: {
+          if (!volumeLaunch.running)
             volumeLaunch.running = true
-          }
         }
+      }
 
-        Module {
-          label: "BRT"
-          value: root.bright
-        }
+      // --------------------------------------------------------
+      // Brightness
+      // --------------------------------------------------------
 
-        Module {
-          label: "BAT"
-          value: root.battery
-        }
+      Module {
+        label: "BRT"
+        value: root.bright
+      }
 
-        Module {
-          label: "NET"
-          value: root.network
+      // --------------------------------------------------------
+      // Battery
+      // --------------------------------------------------------
 
-          onClicked: {
-            if (!networkLaunch.running)
+      Module {
+        label: "BAT"
+        value: root.battery
+      }
+
+      // --------------------------------------------------------
+      // Network
+      // --------------------------------------------------------
+
+      Module {
+        label: "NET"
+        value: root.network
+
+        onClicked: {
+          if (!networkLaunch.running)
             networkLaunch.running = true
-          }
         }
+      }
 
-        Module {
-          label: "BT"
-          value: root.bluetooth
+      // --------------------------------------------------------
+      // Bluetooth
+      // --------------------------------------------------------
 
-          onClicked: {
-            if (!bluetoothLaunch.running)
+      Module {
+        label: "BT"
+        value: root.bluetooth
+
+        onClicked: {
+          if (!bluetoothLaunch.running)
             bluetoothLaunch.running = true
-          }
         }
+      }
 
-        // Clock
-        Rectangle {
-          width: clockText.width + 16
-          height: 24
+      // --------------------------------------------------------
+      // Clock
+      // --------------------------------------------------------
 
-          color: root.moduleBg
+      Rectangle {
+        width: clockText.width + 16
+        height: 24
 
-          Text {
-            id: clockText
+        color: root.moduleBg
 
-            anchors.centerIn: parent
+        Text {
+          id: clockText
 
-            text: Qt.formatDateTime(
-              systemClock.date,
-              "ddd d MMM h:mm AP"
-            )
+          anchors.centerIn: parent
 
-            color: root.textColor
+          text: Qt.formatDateTime(
+            systemClock.date,
+            "ddd d MMM h:mm AP"
+          )
 
-            font.family: "JetBrainsMono Nerd Font"
-            font.pixelSize: 12
-          }
+          color: root.textColor
+
+          font.family: "JetBrainsMono Nerd Font"
+          font.pixelSize: 12
         }
       }
     }
   }
+
+  // ============================================================
+  // CENTERED TOGGLES
+  // ============================================================
+
+  Row {
+    anchors.centerIn: parent
+
+    spacing: 4
+
+    Caffeine {}
+    MicMute {}
+    ScreenShare {}
+  }
+}
 
