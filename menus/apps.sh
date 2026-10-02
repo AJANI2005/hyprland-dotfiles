@@ -1,58 +1,58 @@
 #!/usr/bin/env bash
-# app-launcher.sh
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+shopt -s nullglob
 
-app_dirs=(
-  /usr/share/applications
-  /usr/local/share/applications
-  "$HOME/dotfiles/menus/applications"
-  "$HOME/.local/share/applications"
-  "$HOME/.local/share/flatpak/exports/share/applications"
-  /var/lib/flatpak/exports/share/applications
-)
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/app-launcher"
+term="${TERMINAL:-foot}"
+dirs=("$HOME/.local/share/applications" /usr/share/applications)
 
+build() {
+    declare -A seen
+    local file dir name cmd
 
-list_apps() {
-    for dir in "${app_dirs[@]}"; do
-        [ -d "$dir" ] || continue
+    for dir in "${dirs[@]}"; do
+        for file in "$dir"/*.desktop; do
+            [[ -f $file ]] || continue
+            grep -q '^NoDisplay=true' "$file" && continue
 
-        for f in "$dir"/*.desktop; do
-            [ -e "$f" ] || continue
-            grep -q '^NoDisplay=true' "$f" && continue
+            name=$(sed -n 's/^Name=//p' "$file" | head -1)
+            cmd=$(sed -n 's/^Exec=//p' "$file" | head -1)
 
-            name=$(grep -m1 '^Name=' "$f" | cut -d= -f2-)
-            [ -n "$name" ] || continue
+            [[ $name && $cmd ]] || continue
+            [[ ${seen[$name]} ]] && continue
+            seen["$name"]=1
 
-            icon=$("$SCRIPT_DIR/app-icon.sh" "$name")
+            cmd=${cmd//\%[fFuUdDnNickvm]/}
+            grep -q '^Terminal=true' "$file" && cmd="$term -e $cmd"
 
-            printf '%s  %s\037%s\n' \
-                "$icon" \
-                "$name" \
-                "$(basename "$f")"
+            printf '%s\t%s\n' "$name" "$cmd"
         done
-    done | sort -u -t $'\037' -k1,1
+    done
 }
 
-selection=$(
-    list_apps |
-  fzf \
-    --height=100% \
-    --layout=reverse \
-    --border=none \
-    --margin=1 \
-    --padding=1 \
-    --prompt=' 󰜴 ' \
-    --pointer='▌ ' \
-    --marker='┃ ' \
-    --info=hidden \
-    --no-scrollbar \
-    --delimiter=$'\037' \
-    --with-nth=1
-)
+stale=0
+[[ -f $cache ]] || stale=1
 
-[ -n "$selection" ] || exit 0
+for dir in "${dirs[@]}"; do
+    [[ $dir -nt $cache ]] && stale=1
+done
 
-desktop_id=$(printf '%s' "$selection" | cut -d $'\037' -f2)
+if ((stale)); then
+    mkdir -p "${cache%/*}"
+    build | sort -f >"$cache"
+fi
 
-setsid -f gtk-launch "${desktop_id%.desktop}" >/dev/null 2>&1
+choice=$(
+    cut -f1 "$cache" |
+    fzf \
+        --height=100% \
+        --layout=reverse \
+        --prompt='Apps: ' \
+        --info=hidden
+) || exit
+
+cmd=$(awk -F '\t' -v name="$choice" '$1 == name {print $2; exit}' "$cache")
+
+[[ $cmd ]] || exit
+
+setsid -f sh -c "$cmd" >/dev/null 2>&1

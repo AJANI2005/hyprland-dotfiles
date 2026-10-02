@@ -4,6 +4,9 @@ local browser="librewolf"
 local files="thunar"
 local screenshot_region=[[grim -g "$(slurp)" - | swappy -f -]];
 local screenshot_full="grim - | swappy -f -";
+local screenshot_ocr="grim -g \"$(slurp)\" - | tesseract - stdout 2>/dev/null | wl-copy";
+
+
 local mainMod="SUPER"
 local tui="$HOME/dotfiles/menus/launch.sh"
 
@@ -92,6 +95,7 @@ hl.bind(mainMod.." + F9",hl.dsp.exec_cmd("setsid -f gtk-launch hyprmoncfg &>/dev
 
 -- Screenshots
 hl.bind(mainMod.." + S",hl.dsp.exec_cmd(screenshot_region))
+hl.bind(mainMod.." + ALT + S",hl.dsp.exec_cmd(screenshot_ocr))
 hl.bind(mainMod.." + SHIFT + S",hl.dsp.exec_cmd(screenshot_full))
 
 -- Windows

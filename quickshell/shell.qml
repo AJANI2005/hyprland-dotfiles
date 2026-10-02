@@ -1,6 +1,5 @@
 //@ pragma UseQApplication
 import QtQuick
-import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
@@ -12,751 +11,185 @@ PanelWindow {
 
   WallpaperSwitcher {}
 
-  anchors {
-    bottom: true
-    left: true
-    right: true
-  }
-
+  anchors { bottom: true; left: true; right: true }
   implicitHeight: 28
-  color: "#09090b"
   exclusiveZone: 28
+  color: "#09090b"
 
-  // Colors
-  property color moduleBg: "#18181b"
-  property color labelBg: "#27272a"
-  property color hoverBg: "#303036"
+  readonly property color fg: "#e4e4e7"
+  readonly property color dim: "#52525b"
+  readonly property color red: "#f87171"
+  readonly property color hover: "#27272a"
+  readonly property string ff: "JetBrainsMono Nerd Font"
 
-  property color labelColor: "#a1a1aa"
-  property color textColor: "#e4e4e7"
-  property color mutedColor: "#71717a"
+  // one poll
+  property var l: Array(10).fill("")
+  readonly property bool muted: l[0].includes("MUTED")
+  readonly property int vol: Math.round(parseFloat(l[0].split(" ")[1]) * 100) || 0
+  readonly property int bri: parseInt(l[1]) || 0
+  readonly property int bat: parseInt(l[2]) || 0
+  readonly property bool chg: l[2].includes("Charging")
+  readonly property string net: l[3].slice(l[3].indexOf(":") + 1)
+  readonly property bool eth: l[3].startsWith("ethernet")
+  readonly property int sig: parseInt(l[4]) || 0
+  readonly property int bt: parseInt(l[5]) || 0
+  readonly property bool caf: l[6] === "1"
+  readonly property bool mic: l[7].includes("MUTED")
+  readonly property bool share: l[8] === "1"
+  readonly property string cal: l[9]
+  readonly property string calHtml: {
+    const re = new RegExp("(^|\\s)(" + clock.date.getDate() + ")(?=\\s|$)")
+    return cal.split(":")
+      .map((s, i) => (i < 2 ? s : s.replace(re, "$1\u0001$2\u0002")).replace(/ /g, "&nbsp;"))
+      .join("<br>")
+      .replace("\u0001", '<b><font color="#f87171">').replace("\u0002", "</font></b>")
+  }
 
-  property color activeColor: "#f87171"
-  property color inactiveColor: "#52525b"
+  function g(c) { return String.fromCodePoint(c) }
+  function run(...a) { Quickshell.execDetached(a); poll.running = true }
 
-  // State
-  property string volume: "0%"
-  property string bright: "0%"
-  property string battery: "0%"
-  property string network: "OFF"
-  property string bluetooth: "OFF"
+  Process {
+    id: poll
+    command: ["bash", "-c", `
+      echo "$(wpctl get-volume @DEFAULT_AUDIO_SINK@)"
+      echo "$(brightnessctl -m | cut -d, -f4)"
+      echo $(cat /sys/class/power_supply/BAT*/{capacity,status} | head -2)
+      echo "$(nmcli -t -f TYPE,NAME connection show --active | grep -E '^(802-11-wireless|ethernet)' | head -1)"
+      echo "$(nmcli -t -f IN-USE,SIGNAL dev wifi | sed -n 's/^[*]://p')"
+      bluetoothctl show | grep -q 'Powered: yes' && { bluetoothctl devices Connected | grep -q . && echo 2 || echo 1; } || echo 0
+      pgrep -x hypridle >/dev/null && echo 0 || echo 1
+      echo "$(wpctl get-volume @DEFAULT_AUDIO_SOURCE@)"
+      pw-cli list-objects Node | grep -Fq xdg-desktop-portal-hyprland && echo 1 || echo 0
+      cal -m | tr '\n' ':' | sed 's/:$//'
+    `]
+    stdout: StdioCollector { onStreamFinished: root.l = this.text.split("\n") }
+  }
 
-  property bool caffeine: false
-  property bool micMuted: false
-  property bool screenSharing: false
+  Timer { interval: 2000; running: true; repeat: true; triggeredOnStart: true; onTriggered: poll.running = true }
+  SystemClock { id: clock; precision: SystemClock.Minutes }
 
-  // ============================================================
-  // Reusable module
-  // ============================================================
+  // Icon/text button with tooltip
+  component Btn: Item {
+    id: b
+    property string text
+    property string tip
+    property color col: root.fg
+    property int size: 15
+    signal clicked
 
-  component Module: Item {
-    id: module
+    implicitWidth: t.implicitWidth + 12
+    implicitHeight: 28
 
-    property string label
-    property string value
+    Rectangle { anchors.fill: parent; color: m.containsMouse ? root.hover : "transparent" }
+    Text { id: t; anchors.centerIn: parent; text: b.text; color: b.col; font.family: root.ff; font.pixelSize: b.size }
+    MouseArea { id: m; anchors.fill: parent; hoverEnabled: true; onClicked: b.clicked() }
 
-    signal clicked()
+    PopupWindow {
+      visible: m.containsMouse && b.tip !== ""
+      anchor.item: b
+      anchor.edges: Edges.Top
+      anchor.gravity: Edges.Top
+      implicitWidth: tt.implicitWidth + 14
+      implicitHeight: tt.implicitHeight + 8
+      color: "#18181b"
+      Text { id: tt; anchors.centerIn: parent; text: b.tip; color: root.fg; font.family: root.ff; font.pixelSize: 11 }
+    }
+  }
 
-    implicitWidth: content.width
-    implicitHeight: 24
+  // Left: workspaces
+  Row {
+    anchors { left: parent.left; leftMargin: 4; verticalCenter: parent.verticalCenter }
+    Repeater {
+      model: 9
+      Btn {
+        readonly property int id: index + 1
+        text: id
+        size: 12
+        tip: "Workspace " + id
+        col: Hyprland.focusedWorkspace?.id === id ? root.red
+           : Hyprland.workspaces.values.some(w => w.id === id) ? root.fg : root.dim
+        onClicked: Hyprland.dispatch("workspace " + id)
+      }
+    }
+  }
+
+  // Center: toggles + clock
+  Row {
+    anchors.centerIn: parent
+    Btn {
+      text: root.g(root.caf ? 0xF0176 : 0xF0FAA)
+      col: root.caf ? root.red : root.fg
+      tip: "Caffeine " + (root.caf ? "enabled" : "disabled")
+      onClicked: root.run("bash", "-c", "pgrep -x hypridle && pkill -x hypridle || hypridle")
+    }
+    Btn {
+      text: root.g(root.mic ? 0xF036D : 0xF036C)
+      col: root.mic ? root.red : root.fg
+      tip: "Microphone " + (root.mic ? "muted" : "enabled")
+      onClicked: root.run("wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle")
+    }
+    Btn {
+      size: 12
+      text: Qt.formatDateTime(clock.date, "ddd d MMM  h:mm AP")
+      tip: root.calHtml
+    }
+    Btn { visible: root.share; text: root.g(0xF0379); col: root.red; tip: "Screen sharing active" }
+  }
+
+  // Right: tray + status (battery last)
+  Row {
+    anchors { right: parent.right; rightMargin: 4; verticalCenter: parent.verticalCenter }
 
     Row {
-      id: content
-
-      height: 24
-      spacing: 1
-
-      Rectangle {
-        width: labelText.implicitWidth + 10
-        height: 24
-        color: root.labelBg
-
-        Text {
-          id: labelText
-
-          anchors.centerIn: parent
-          text: module.label
-          color: root.labelColor
-
-          font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 12
-          font.bold: true
-        }
-      }
-
-      Rectangle {
-        width: valueText.implicitWidth + 10
-        height: 24
-        color: root.moduleBg
-
-        Text {
-          id: valueText
-
-          anchors.centerIn: parent
-          text: module.value
-          color: root.textColor
-
-          font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 12
-        }
-      }
-    }
-
-    MouseArea {
-      anchors.fill: parent
-      cursorShape: Qt.PointingHandCursor
-
-      onClicked:
-        module.clicked()
-    }
-  }
-
-  // ============================================================
-  // Caffeine
-  // ============================================================
-
-  component Caffeine: Rectangle {
-    id: caffeineModule
-
-    width: 28
-    height: 24
-
-    color: "transparent"
-
-    Text {
-      anchors.centerIn: parent
-
-      text: "󰅶"
-
-      color: root.caffeine
-        ? root.textColor
-        : root.activeColor
-
-      font.family: "JetBrainsMono Nerd Font"
-      font.pixelSize: 15
-    }
-
-    MouseArea {
-      anchors.fill: parent
-      cursorShape: Qt.PointingHandCursor
-
-      onClicked:
-        caffeineToggle.running = true
-    }
-  }
-
-  // ============================================================
-  // Microphone mute
-  // ============================================================
-
-  component MicMute: Rectangle {
-    id: micModule
-
-    width: 28
-    height: 24
-
-    color: "transparent"
-
-    Text {
-      anchors.centerIn: parent
-
-      text: root.micMuted
-        ? "󰍭"
-        : "󰍬"
-
-      color: root.micMuted
-        ? root.activeColor
-        : root.textColor
-
-      font.family: "JetBrainsMono Nerd Font"
-      font.pixelSize: 15
-    }
-
-    MouseArea {
-      anchors.fill: parent
-      cursorShape: Qt.PointingHandCursor
-
-      onClicked:
-        micMuteToggle.running = true
-    }
-  }
-
-  // ============================================================
-  // Screen sharing
-  // ============================================================
-
-  component ScreenShare: Rectangle {
-    id: screenShareModule
-
-    visible: root.screenSharing
-
-    width: root.screenSharing ? 28 : 0
-    height: 24
-
-    color: "transparent"
-
-    Text {
-      anchors.centerIn: parent
-
-      text: "󰍹"
-      color: root.activeColor
-
-      font.family: "JetBrainsMono Nerd Font"
-      font.pixelSize: 15
-    }
-  }
-
-  // ============================================================
-  // Volume
-  // ============================================================
-
-  Process {
-    id: volumeProc
-
-    command: [
-      "bash",
-      "-c",
-      "wpctl get-volume @DEFAULT_AUDIO_SINK@"
-    ]
-
-    stdout: StdioCollector {
-      onStreamFinished: {
-        let output = this.text.trim()
-
-        if (output.includes("[MUTED]")) {
-          root.volume = "MUTE"
-          return
-        }
-
-        let match = output.match(/Volume:\s+([0-9.]+)/)
-
-        if (match)
-          root.volume =
-            Math.round(match[1] * 100) + "%"
-      }
-    }
-  }
-
-  // ============================================================
-  // Brightness
-  // ============================================================
-
-  Process {
-    id: brightProc
-
-    command: [
-      "bash",
-      "-c",
-      "brightnessctl -m | cut -d, -f4"
-    ]
-
-    stdout: StdioCollector {
-      onStreamFinished:
-        root.bright = this.text.trim()
-    }
-  }
-
-  // ============================================================
-  // Battery
-  // ============================================================
-
-  Process {
-    id: batteryProc
-
-    command: [
-      "bash",
-      "-c",
-      "upower -i $(upower -e | grep 'BAT') | " +
-      "grep -E 'percentage:' | awk '{print $2}'"
-    ]
-
-    stdout: StdioCollector {
-      onStreamFinished:
-        root.battery = this.text.trim()
-    }
-  }
-
-  // ============================================================
-  // Network
-  // ============================================================
-
-  Process {
-    id: networkProc
-
-    command: [
-      "bash",
-      "-c",
-      "nmcli -t -f NAME,TYPE connection show --active | " +
-      "awk -F: '$2 == \"802-11-wireless\" || " +
-      "$2 == \"ethernet\" {print $1; exit}'"
-    ]
-
-    stdout: StdioCollector {
-      onStreamFinished: {
-        let name = this.text.trim()
-
-        root.network =
-          name.length > 0
-          ? name
-          : "OFF"
-      }
-    }
-  }
-
-  // ============================================================
-  // Bluetooth
-  // ============================================================
-
-  Process {
-    id: bluetoothProc
-
-    command: [
-      "bash",
-      "-c",
-      "bluetoothctl show | " +
-      "grep -q 'Powered: yes' && echo ON || echo OFF"
-    ]
-
-    stdout: StdioCollector {
-      onStreamFinished:
-        root.bluetooth = this.text.trim()
-    }
-  }
-
-  // ============================================================
-  // Microphone state
-  // ============================================================
-
-  Process {
-    id: micState
-
-    command: [
-      "bash",
-      "-c",
-      "wpctl get-volume @DEFAULT_AUDIO_SOURCE@"
-    ]
-
-    stdout: StdioCollector {
-      onStreamFinished:
-        root.micMuted =
-          this.text.includes("[MUTED]")
-    }
-  }
-
-  // ============================================================
-  // Screen sharing state
-  // ============================================================
-
-  Process {
-    id: screenShareState
-
-    command: [
-      "bash",
-      "-c",
-      "pw-cli list-objects Node | " +
-      "grep -Fq 'node.name = \"xdg-desktop-portal-hyprland\"' && " +
-      "echo ON || echo OFF"
-    ]
-
-    stdout: StdioCollector {
-      onStreamFinished:
-        root.screenSharing =
-          this.text.trim() === "ON"
-    }
-  }
-
-  // ============================================================
-  // Volume launcher
-  // ============================================================
-
-  Process {
-    id: volumeLaunch
-
-    command: [
-      "pwvucontrol"
-    ]
-  }
-
-  // ============================================================
-  // Network launcher
-  // ============================================================
-
-  Process {
-    id: networkLaunch
-
-    command: [
-      "foot",
-      "--app-id=nmtui",
-      "-e",
-      "nmtui"
-    ]
-  }
-
-  // ============================================================
-  // Bluetooth launcher
-  // ============================================================
-
-  Process {
-    id: bluetoothLaunch
-
-    command: [
-      "foot",
-      "--app-id=bluetui",
-      "-e",
-      "bluetui"
-    ]
-  }
-
-  // ============================================================
-  // Caffeine toggle
-  // ============================================================
-
-  Process {
-    id: caffeineToggle
-
-    command: [
-      "bash",
-      "-c",
-      "if pgrep -x hypridle >/dev/null; then " +
-      "pkill -x hypridle; " +
-      "else " +
-      "hypridle >/dev/null 2>&1 & " +
-      "fi"
-    ]
-
-    onExited:
-      caffeineState.running = true
-  }
-
-  // ============================================================
-  // Caffeine state
-  // ============================================================
-
-  Process {
-    id: caffeineState
-
-    command: [
-      "bash",
-      "-c",
-      "pgrep -x hypridle >/dev/null && echo ON || echo OFF"
-    ]
-
-    stdout: StdioCollector {
-      onStreamFinished:
-        root.caffeine =
-          this.text.trim() === "ON"
-    }
-  }
-
-  // ============================================================
-  // Microphone toggle
-  // ============================================================
-
-  Process {
-    id: micMuteToggle
-
-    command: [
-      "wpctl",
-      "set-mute",
-      "@DEFAULT_AUDIO_SOURCE@",
-      "toggle"
-    ]
-
-    onExited:
-      micState.running = true
-  }
-
-  // ============================================================
-  // Update everything
-  // ============================================================
-
-  Timer {
-    interval: 1000
-    running: true
-    repeat: true
-
-    onTriggered: {
-      volumeProc.running = true
-      brightProc.running = true
-      batteryProc.running = true
-      networkProc.running = true
-      bluetoothProc.running = true
-      caffeineState.running = true
-      micState.running = true
-      screenShareState.running = true
-    }
-  }
-
-  Component.onCompleted: {
-    volumeProc.running = true
-    brightProc.running = true
-    batteryProc.running = true
-    networkProc.running = true
-    bluetoothProc.running = true
-    caffeineState.running = true
-    micState.running = true
-    screenShareState.running = true
-  }
-
-  // ============================================================
-  // Clock
-  // ============================================================
-
-  SystemClock {
-    id: systemClock
-
-    precision: SystemClock.Minutes
-  }
-
-  // ============================================================
-  // Main bar
-  // ============================================================
-
-  RowLayout {
-    anchors.fill: parent
-
-    anchors.leftMargin: 8
-    anchors.rightMargin: 8
-
-    spacing: 12
-
-    // ----------------------------------------------------------
-    // Workspaces - LEFT
-    // ----------------------------------------------------------
-
-    Row {
-      spacing: 10
-
+      spacing: 5
+      rightPadding: 8
       Repeater {
-        model: 9
-
-        Text {
-          property bool active:
-            Hyprland.focusedWorkspace?.id === index + 1
-
-          property var ws:
-            Hyprland.workspaces.values.find(
-              w => w.id === index + 1
-            )
-
-          text: index + 1
-
-          color: active
-            ? root.activeColor
-            : ws
-            ? root.labelColor
-            : root.inactiveColor
-
-          font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 12
-          font.bold: active
-
+        model: SystemTray.items
+        Item {
+          id: ti
+          width: 16; height: 28
+          Image { anchors.centerIn: parent; width: 16; height: 16; source: modelData.icon }
           MouseArea {
             anchors.fill: parent
-
-            onClicked:
-              Hyprland.dispatch(
-                "workspace " + (index + 1)
-              )
-          }
-        }
-      }
-    }
-
-    // ----------------------------------------------------------
-    // Window title - CENTER AREA
-    // ----------------------------------------------------------
-
-    Text {
-      Layout.fillWidth: true
-
-      text:
-        Hyprland.focusedToplevel?.title ?? ""
-
-      color: root.mutedColor
-
-      font.family: "JetBrainsMono Nerd Font"
-      font.pixelSize: 12
-
-      elide: Text.ElideRight
-    }
-
-    // ----------------------------------------------------------
-    // Right side
-    // ----------------------------------------------------------
-
-    Row {
-      spacing: 2
-
-      // --------------------------------------------------------
-      // System tray
-      // --------------------------------------------------------
-
-      Rectangle {
-        width: trayContent.width + 12
-        height: 24
-
-        color: "transparent"
-
-        Row {
-          id: trayContent
-
-          anchors.centerIn: parent
-          spacing: 5
-
-          Repeater {
-            model: SystemTray.items
-
-            delegate: Item {
-              id: trayItem
-
-              width: 16
-              height: 16
-
-              Image {
-                anchors.fill: parent
-
-                source: modelData.icon
-                sourceSize: Qt.size(16, 16)
-
-                fillMode:
-                  Image.PreserveAspectFit
-              }
-
-              MouseArea {
-                anchors.fill: parent
-
-                acceptedButtons:
-                  Qt.LeftButton |
-                  Qt.MiddleButton |
-                  Qt.RightButton
-
-                onClicked: mouse => {
-                  if (mouse.button === Qt.LeftButton) {
-                    modelData.activate()
-                  } else if (mouse.button === Qt.MiddleButton) {
-                    modelData.secondaryActivate()
-                  } else if (mouse.button === Qt.RightButton) {
-                    let pos = root.itemPosition(trayItem)
-
-                    modelData.display(
-                      root,
-                      Math.round(
-                        pos.x + trayItem.width / 2
-                      ),
-                      Math.round(
-                        pos.y + trayItem.height
-                      )
-                    )
-                  }
-                }
-              }
+            acceptedButtons: Qt.AllButtons
+            onClicked: e => {
+              if (e.button === Qt.LeftButton) modelData.activate()
+              else if (e.button === Qt.MiddleButton) modelData.secondaryActivate()
+              else { const p = root.itemPosition(ti); modelData.display(root, Math.round(p.x + 8), Math.round(p.y + ti.height)) }
             }
           }
         }
       }
+    }
 
-      // --------------------------------------------------------
-      // Volume
-      // --------------------------------------------------------
-
-      Module {
-        label: "VOL"
-        value: root.volume
-
-        onClicked: {
-          if (!volumeLaunch.running)
-            volumeLaunch.running = true
-        }
-      }
-
-      // --------------------------------------------------------
-      // Brightness
-      // --------------------------------------------------------
-
-      Module {
-        label: "BRT"
-        value: root.bright
-      }
-
-      // --------------------------------------------------------
-      // Battery
-      // --------------------------------------------------------
-
-      Module {
-        label: "BAT"
-        value: root.battery
-      }
-
-      // --------------------------------------------------------
-      // Network
-      // --------------------------------------------------------
-
-      Module {
-        label: "NET"
-        value: root.network
-
-        onClicked: {
-          if (!networkLaunch.running)
-            networkLaunch.running = true
-        }
-      }
-
-      // --------------------------------------------------------
-      // Bluetooth
-      // --------------------------------------------------------
-
-      Module {
-        label: "BT"
-        value: root.bluetooth
-
-        onClicked: {
-          if (!bluetoothLaunch.running)
-            bluetoothLaunch.running = true
-        }
-      }
-
-      // --------------------------------------------------------
-      // Clock
-      // --------------------------------------------------------
-
-      Rectangle {
-        width: clockText.width + 16
-        height: 24
-
-        color: root.moduleBg
-
-        Text {
-          id: clockText
-
-          anchors.centerIn: parent
-
-          text: Qt.formatDateTime(
-            systemClock.date,
-            "ddd d MMM h:mm AP"
-          )
-
-          color: root.textColor
-
-          font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 12
-        }
-      }
+    Btn {  // volume
+      text: root.g(root.muted ? 0xF075F : [0xF057F, 0xF0580, 0xF057E][Math.min(2, root.vol / 33 | 0)])
+      col: root.muted ? root.red : root.fg
+      tip: root.muted ? "Volume muted" : "Volume: " + root.vol + "%"
+      onClicked: Quickshell.execDetached(["pwvucontrol"])
+    }
+    Btn {  // brightness
+      text: root.g(0xF00DA + Math.min(6, root.bri / 15 | 0))
+      tip: "Brightness: " + root.bri + "%"
+    }
+    Btn {  // network
+      text: root.g(!root.net ? 0xF092D : root.eth ? 0xF0200 : 0xF091F + 3 * Math.min(3, root.sig / 25 | 0))
+      col: root.net ? root.fg : root.dim
+      tip: root.net ? "Network: " + root.net : "Network disconnected"
+      onClicked: Quickshell.execDetached(["foot", "--app-id=nmtui", "-e", "nmtui"])
+    }
+    Btn {  // bluetooth
+      text: root.g([0xF00B2, 0xF00AF, 0xF00B1][root.bt])
+      col: root.bt ? root.fg : root.dim
+      tip: "Bluetooth: " + ["off", "on", "connected"][root.bt]
+      onClicked: Quickshell.execDetached(["foot", "--app-id=bluetui", "-e", "bluetui"])
+    }
+    Btn {  // battery
+      text: root.g(root.chg
+        ? [0xF089C, 0xF0086, 0xF0087, 0xF0088, 0xF089D, 0xF0089, 0xF089E, 0xF008A, 0xF008B, 0xF0085][Math.min(9, root.bat / 10 | 0)]
+        : 0xF0079 + Math.max(1, Math.round(root.bat / 10)) % 10)
+      col: root.bat <= 15 && !root.chg ? root.red : root.fg
+      tip: "Battery: " + root.bat + "%" + (root.chg ? " (charging)" : "")
     }
   }
-
-  // ============================================================
-  // CENTERED TOGGLES
-  // ============================================================
-
-  Row {
-    anchors.centerIn: parent
-
-    spacing: 4
-
-    Caffeine {}
-    MicMute {}
-    ScreenShare {}
-  }
 }
-
