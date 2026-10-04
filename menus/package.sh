@@ -1,280 +1,50 @@
 #!/usr/bin/env bash
-
 set -u
 
+pick() { fuzzel --dmenu -p "$1 > "; }
+run()  { foot --app-id=package-tui bash -c "$1; printf '\nPress any key to close...'; read -rsn1"; }
+get()  { local ref="$1[$2]"; echo "${!ref}"; }
 
-TAG_PACMAN="󰮯"
-TAG_AUR="󰊢"
-TAG_FLATPAK="󰏗"
-
-ICON_INSTALL="󰐕"
-ICON_UNINSTALL="󰆴"
-ICON_UPDATE="󰚰"
-ICON_CLEAN="󰩹"
-
-
-# ── Helpers ──────────────────────────────────────────
-
-run() {
-  foot --app-id=package-tui bash -c '
-    "$@"
-    status=$?
-
-    printf "\nPress any key to close..."
-    read -rsn1
-
-    exit "$status"
-  ' bash "$@"
-}
-
-pick() {
-  printf '%s\n' "$@" |
-    fzf \
-      --height=100% \
-      --reverse \
-      --border=none \
-      --margin=1 \
-      --prompt="> " \
-      --pointer="▌ " \
-      --marker="┃ " \
-      --info=hidden
-}
-
-
-# ── Previews ─────────────────────────────────────────
-
-pacman_preview() {
-  pacman -Q "$1" &>/dev/null &&
-    printf '󰄬 INSTALLED\n\n' ||
-    printf '󰐕 NOT INSTALLED\n\n'
-
-  pacman -Si "$1"
-}
-
-aur_preview() {
-  local package=${1#*/}
-
-  pacman -Q "$package" &>/dev/null &&
-    printf '󰄬 INSTALLED\n\n' ||
-    printf '󰐕 NOT INSTALLED\n\n'
-
-  paru -Si "$package"
-}
-
-export -f pacman_preview aur_preview
-
-
-# ── Pacman ───────────────────────────────────────────
-
-install_pacman() {
-  local package
-
-  package=$(
-    pacman -Ssq |
-      fzf \
-        --reverse \
-        --preview 'pacman_preview {}'
-  )
-
-  [[ -n $package ]] &&
-    run sudo pacman -S "$package"
-}
-
-uninstall_pacman() {
-  local package
-
-  package=$(
-    pacman -Qqe |
-      fzf \
-        --reverse \
-        --preview 'pacman -Qi {}'
-  )
-
-  [[ -n $package ]] &&
-    run sudo pacman -Rns "$package"
-}
-
-update_pacman() {
-  run sudo pacman -Syu
-}
-
-cleanup_pacman() {
-  local orphans
-
-  orphans=$(pacman -Qdtq)
-
-  if [[ -n $orphans ]]; then
-    run sudo pacman -Rns $orphans
-  else
-    run bash -c 'printf "No orphan packages found.\n"'
-  fi
-}
-
-
-# ── AUR ──────────────────────────────────────────────
-
-install_aur() {
-  local query package
-
-  read -rp "Search AUR: " query
-  [[ -z $query ]] && return
-
-  package=$(
-    paru -Ssaq "$query" |
-      fzf \
-        --reverse \
-        --preview 'aur_preview {}'
-  )
-
-  [[ -n $package ]] &&
-    run paru -S "${package#*/}"
-}
-
-uninstall_aur() {
-  local package
-
-  package=$(
-    paru -Qmq |
-      fzf \
-        --reverse \
-        --preview 'paru -Qi {}'
-  )
-
-  [[ -n $package ]] &&
-    run paru -Rns "$package"
-}
-
-update_aur() {
-  run paru -Sua
-}
-
-cleanup_aur() {
-  run paru -Sc
-}
-
-
-# ── Flatpak ──────────────────────────────────────────
-
-install_flatpak() {
-  local package
-
-  package=$(
-    flatpak search --columns=application,name "" |
-      fzf --reverse
-  )
-
-  package=$(awk '{print $1}' <<< "$package")
-
-  [[ -n $package ]] &&
-    run flatpak install "$package"
-}
-
-uninstall_flatpak() {
-  local package
-
-  package=$(
-    flatpak list --app --columns=application,name |
-      fzf --reverse
-  )
-
-  package=$(awk '{print $1}' <<< "$package")
-
-  [[ -n $package ]] &&
-    run flatpak uninstall "$package"
-}
-
-update_flatpak() {
-  run flatpak update
-}
-
-cleanup_flatpak() {
-  run flatpak uninstall --unused
-}
-
-
-# ── All ──────────────────────────────────────────────
-
-update_all() {
-  run bash -c '
-    sudo pacman -Syu &&
-    paru -Sua &&
-    flatpak update
-  '
-}
-
-cleanup_all() {
-  run bash -c '
-    orphans=$(pacman -Qdtq)
-
-    if [[ -n $orphans ]]; then
-      sudo pacman -Rns $orphans
-    else
-      echo "No orphan packages."
-    fi
-
-    paru -Sc
-    flatpak uninstall --unused
-  '
-}
-
-
-# ── Menus ────────────────────────────────────────────
-
-declare -A actions=(
-  ["$ICON_INSTALL Install package"]="install"
-  ["$ICON_UNINSTALL Uninstall package"]="uninstall"
-  ["$ICON_UPDATE Update"]="update"
-  ["$ICON_CLEAN Clean up"]="cleanup"
+declare -A SEARCH=([pacman]='pacman -Ssq' [aur]='paru -Ssaq' [flatpak]='flatpak search --columns=application,name')
+declare -A LIST=([pacman]='pacman -Qqe' [aur]='paru -Qmq' [flatpak]='flatpak list --app --columns=application')
+declare -A INFO=([pacman]='pacman -Si' [aur]='paru -Si' [flatpak]='flatpak remote-info flathub')
+declare -A QINFO=([pacman]='pacman -Qi' [aur]='paru -Qi' [flatpak]='flatpak info')
+declare -A INSTALL=([pacman]='sudo pacman -S' [aur]='paru -S' [flatpak]='flatpak install')
+declare -A REMOVE=([pacman]='sudo pacman -Rns' [aur]='paru -Rns' [flatpak]='flatpak uninstall')
+declare -A UPDATE=([pacman]='sudo pacman -Syu' [aur]='paru -Sua' [flatpak]='flatpak update')
+declare -A CLEANUP=(
+  [pacman]='orphans=$(pacman -Qdtq); if [[ $orphans ]]; then sudo pacman -Rns $orphans; else echo "No orphan packages."; fi'
+  [aur]='paru -Sc'
+  [flatpak]='flatpak uninstall --unused'
 )
-
-declare -A managers=(
-  ["$TAG_PACMAN Pacman"]="pacman"
-  ["$TAG_AUR AUR"]="aur"
-  ["$TAG_FLATPAK Flatpak"]="flatpak"
-)
-
-
-# ── Main loop ────────────────────────────────────────
 
 while :; do
-  clear
+  action=$(printf '%s\n' "󰐕 Install" "󰆴 Uninstall" "󰚰 Update" "󰩹 Clean up" | pick Action) || exit
+  action=${action#* }; action=${action,,}; action=${action// /}
 
-  selected=$(pick "${!actions[@]}")
-  [[ -z $selected ]] && exit
+  options=("󰮯 Pacman" "󰊢 AUR" "󰏗 Flatpak")
+  [[ $action == update || $action == cleanup ]] && options+=("󰋙 All")
+  manager=$(printf '%s\n' "${options[@]}" | pick "${action^}") || continue
+  manager=${manager#* }; manager=${manager,,}
 
-  action=${actions[$selected]}
+  case $action in
+    update|cleanup)
+      if [[ $manager == all ]]; then
+        command=; for each in pacman aur flatpak; do command+="${command:+; }$(get "${action^^}" $each)"; done
+      else
+        command=$(get "${action^^}" $manager)
+      fi
+      run "$command" ;;
 
-  menu=(
-    "$TAG_PACMAN Pacman"
-    "$TAG_AUR AUR"
-    "$TAG_FLATPAK Flatpak"
-  )
+    install)
+      query=; [[ $manager == pacman ]] || { query=$(pick "Search $manager" </dev/null) && [[ $query ]] || continue; }
+      package=$(${SEARCH[$manager]} "$query" | pick Install) || continue
+      package=${package#*/}; package=${package%%[[:space:]]*}
+      run "$(get INFO $manager) $package; read -rp 'Install $package? [Y/n] ' reply; [[ \${reply,,} != n ]] && $(get INSTALL $manager) $package" ;;
 
-  [[ $action == update || $action == cleanup ]] &&
-    menu+=("$action all")
-
-  selected=$(pick "${menu[@]}")
-  [[ -z $selected ]] && continue
-
-  manager=${managers[$selected]:-all}
-
-  case "$manager:$action" in
-    pacman:install)    install_pacman ;;
-    pacman:uninstall)  uninstall_pacman ;;
-    pacman:update)     update_pacman ;;
-    pacman:cleanup)    cleanup_pacman ;;
-
-    aur:install)       install_aur ;;
-    aur:uninstall)     uninstall_aur ;;
-    aur:update)        update_aur ;;
-    aur:cleanup)       cleanup_aur ;;
-
-    flatpak:install)   install_flatpak ;;
-    flatpak:uninstall) uninstall_flatpak ;;
-    flatpak:update)    update_flatpak ;;
-    flatpak:cleanup)   cleanup_flatpak ;;
-
-    all:update)        update_all ;;
-    all:cleanup)       cleanup_all ;;
+    uninstall)
+      package=$(${LIST[$manager]} | pick Uninstall) || continue
+      package=${package%%[[:space:]]*}
+      run "$(get QINFO $manager) $package; read -rp 'Remove $package? [y/N] ' reply; [[ \${reply,,} == y ]] && $(get REMOVE $manager) $package" ;;
   esac
 done

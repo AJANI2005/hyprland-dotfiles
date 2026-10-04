@@ -8,35 +8,14 @@ choice=$(
     '󰒲  Suspend' \
     '󰤄  Hibernate' \
     '󰍃  Logout' |
-    fzf \
-      --height=100% \
-      --layout=reverse \
-      --prompt='Power > ' \
-      --no-multi
+    fuzzel --dmenu --prompt='Power > ' --lines=6
 ) || exit 0
 
 case "$choice" in
-  *Lock)
-    hyprlock
-    ;;
-
-  *Shutdown)
-    systemctl poweroff
-    ;;
-
-  *Reboot)
-    systemctl reboot
-    ;;
-
-  *Suspend)
-    systemctl suspend
-    ;;
-
-  *Hibernate)
-    systemctl hibernate
-    ;;
-
-  *Logout)
-    hyprctl dispatch 'hl.dsp.exit()'
-    ;;
+  *Lock)      hyprlock ;;
+  *Shutdown)  systemctl poweroff ;;
+  *Reboot)    systemctl reboot ;;
+  *Suspend)   systemctl suspend ;;
+  *Hibernate) systemctl hibernate ;;
+  *Logout)    hyprctl dispatch 'hl.dsp.exit()' ;;
 esac

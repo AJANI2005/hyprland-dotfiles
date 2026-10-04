@@ -8,7 +8,6 @@ local screenshot_ocr="grim -g \"$(slurp)\" - | tesseract - stdout 2>/dev/null | 
 
 
 local mainMod="SUPER"
-local tui="$HOME/dotfiles/menus/launch.sh"
 
 -- Permissions
 hl.permission({
@@ -40,25 +39,31 @@ hl.on("hyprland.start",function()
 
   -- Apps
   hl.exec_cmd("morgen &")
+
+  -- Clipboard
+  hl.exec_cmd("wl-paste --type text --watch cliphist store")
+  hl.exec_cmd("wl-paste --type image --watch cliphist store")
 end)
 
 -- Look & Feel
 hl.config({
-  general={gaps_in=5,gaps_out=8,
-  border_size=2,col={
-    active_border="rgba(666666cc)",
-    inactive_border="rgba(33333388)"},
+  general={
+    gaps_in=5,gaps_out=8,
+    border_size=2,
+    col={
+      active_border="rgba(9ca3afaa)",
+      inactive_border="rgba(33333388)"
+    },
     resize_on_border=true,allow_tearing=false,float_gaps=-1,layout="dwindle"},
-    decoration={rounding=4,rounding_power=2,
+    decoration={rounding=0,rounding_power=2,
     shadow={enabled=true,range=3,render_power=2,color=0x55000000},blur={enabled=false}},
     dwindle={preserve_split=true},
     master={new_status="master"},
     scrolling={fullscreen_on_one_column=true},
     input={kb_layout="us",repeat_rate=25,repeat_delay=300,
     follow_mouse=1,sensitivity=0,touchpad={natural_scroll=true}},
-    misc={disable_splash_rendering = true,force_default_wallpaper=1,disable_hyprland_logo=true,
-    mouse_move_enables_dpms=true, key_press_enables_dpms=true
-  },
+    misc={disable_splash_rendering=true,force_default_wallpaper=1,disable_hyprland_logo=true,
+    mouse_move_enables_dpms=true,key_press_enables_dpms=true}
 })
 
 hl.gesture({fingers=3,direction="horizontal",action="workspace"})
@@ -71,8 +76,9 @@ hl.bind(mainMod.." + SHIFT + C",hl.dsp.exec_cmd(browser .. " --new-window https:
 
 
 -- Menus
-hl.bind(mainMod.." + Space",hl.dsp.exec_cmd(tui .. " apps.sh"))
-hl.bind(mainMod.." + SHIFT + P",hl.dsp.exec_cmd(tui .. " power.sh"))
+hl.bind(mainMod.." + Space",hl.dsp.exec_cmd("fuzzel"))
+hl.bind(mainMod.." + V",hl.dsp.exec_cmd("~/dotfiles/menus/clipboard.sh"))
+hl.bind(mainMod.." + SHIFT + P",hl.dsp.exec_cmd("~/dotfiles/menus/power.sh"))
 hl.bind(mainMod.." + SHIFT + W",hl.dsp.exec_cmd("qs ipc call wallpapers toggle"))
 
 
@@ -164,7 +170,7 @@ hl.curve("almostLinear", { type = "bezier", points = { { 0.5, 0.5 }, { 0.75, 1.0
 hl.curve("quick", { type = "bezier", points = { { 0.15, 0 }, { 0.1, 1 } } })
 
 hl.animation({ leaf = "global", enabled = true, speed = 10, bezier = "default" })
-hl.animation({ leaf = "border", enabled = true, speed = 5, bezier = "easeOutQuint" })
+hl.animation({ leaf = "border", enabled = false, speed = 5, bezier = "easeOutQuint" })
 hl.animation({ leaf = "windows", enabled = true, speed = 3, bezier = "easeOutQuint" })
 hl.animation({ leaf = "windowsIn", enabled = true, speed = 4, bezier = "easeOutQuint", style = "popin 60%" })
 hl.animation({ leaf = "windowsOut", enabled = true, speed = 2, bezier = "linear", style = "popin 60%" })

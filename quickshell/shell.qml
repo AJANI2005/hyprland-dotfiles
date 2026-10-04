@@ -45,7 +45,6 @@ PanelWindow {
       .replace("\u0001", '<b><font color="#f87171">').replace("\u0002", "</font></b>")
   }
 
-  function g(c) { return String.fromCodePoint(c) }
   function run(...a) { Quickshell.execDetached(a); poll.running = true }
 
   Process {
@@ -113,17 +112,17 @@ PanelWindow {
     }
   }
 
-  // Center: toggles + clock
+  // Center:
   Row {
     anchors.centerIn: parent
     Btn {
-      text: root.g(root.caf ? 0xF0176 : 0xF0FAA)
+      text: root.caf ? "󰅶" : "󰾪"
       col: root.caf ? root.red : root.fg
       tip: "Caffeine " + (root.caf ? "enabled" : "disabled")
       onClicked: root.run("bash", "-c", "pgrep -x hypridle && pkill -x hypridle || hypridle")
     }
     Btn {
-      text: root.g(root.mic ? 0xF036D : 0xF036C)
+      text: root.mic ? "󰍭" : "󰍬"
       col: root.mic ? root.red : root.fg
       tip: "Microphone " + (root.mic ? "muted" : "enabled")
       onClicked: root.run("wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle")
@@ -133,7 +132,7 @@ PanelWindow {
       text: Qt.formatDateTime(clock.date, "ddd d MMM  h:mm AP")
       tip: root.calHtml
     }
-    Btn { visible: root.share; text: root.g(0xF0379); col: root.red; tip: "Screen sharing active" }
+    Btn { visible: root.share; text: "󰍹"; col: root.red; tip: "Screen sharing active" }
   }
 
   // Right: tray + status (battery last)
@@ -163,33 +162,41 @@ PanelWindow {
     }
 
     Btn {  // volume
-      text: root.g(root.muted ? 0xF075F : [0xF057F, 0xF0580, 0xF057E][Math.min(2, root.vol / 33 | 0)])
+      visible: false
+      text: root.muted ? "󰝟" : ["󰕿", "󰖀", "󰕾"][Math.min(2, root.vol / 33 | 0)]
       col: root.muted ? root.red : root.fg
       tip: root.muted ? "Volume muted" : "Volume: " + root.vol + "%"
       onClicked: Quickshell.execDetached(["pwvucontrol"])
     }
     Btn {  // brightness
-      text: root.g(0xF00DA + Math.min(6, root.bri / 15 | 0))
+      visible: false
+      text: ["󰃚", "󰃛", "󰃜", "󰃝", "󰃞", "󰃟", "󰃠"][Math.min(6, root.bri / 15 | 0)]
       tip: "Brightness: " + root.bri + "%"
     }
+    Btn {  // clipboard
+      text: "󰅇"
+      tip: "Clipboard history"
+      onClicked: root.run("bash", "-c", "~/dotfiles/menus/clipboard.sh")
+    }
     Btn {  // network
-      text: root.g(!root.net ? 0xF092D : root.eth ? 0xF0200 : 0xF091F + 3 * Math.min(3, root.sig / 25 | 0))
+      text: !root.net ? "󰤭" : root.eth ? "󰈀" : ["󰤟", "󰤢", "󰤥", "󰤨"][Math.min(3, root.sig / 25 | 0)]
       col: root.net ? root.fg : root.dim
       tip: root.net ? "Network: " + root.net : "Network disconnected"
       onClicked: Quickshell.execDetached(["foot", "--app-id=nmtui", "-e", "nmtui"])
     }
     Btn {  // bluetooth
-      text: root.g([0xF00B2, 0xF00AF, 0xF00B1][root.bt])
+      text: ["󰂲", "󰂯", "󰂱"][root.bt]
       col: root.bt ? root.fg : root.dim
       tip: "Bluetooth: " + ["off", "on", "connected"][root.bt]
       onClicked: Quickshell.execDetached(["foot", "--app-id=bluetui", "-e", "bluetui"])
     }
     Btn {  // battery
-      text: root.g(root.chg
-        ? [0xF089C, 0xF0086, 0xF0087, 0xF0088, 0xF089D, 0xF0089, 0xF089E, 0xF008A, 0xF008B, 0xF0085][Math.min(9, root.bat / 10 | 0)]
-        : 0xF0079 + Math.max(1, Math.round(root.bat / 10)) % 10)
+      text: root.chg
+        ? ["󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"][Math.min(9, root.bat / 10 | 0)]
+        : ["󰁹", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂"][Math.max(1, Math.round(root.bat / 10)) % 10]
       col: root.bat <= 15 && !root.chg ? root.red : root.fg
       tip: "Battery: " + root.bat + "%" + (root.chg ? " (charging)" : "")
     }
   }
 }
+

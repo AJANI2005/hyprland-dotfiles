@@ -178,7 +178,7 @@ Item {
     Text {
       anchors.centerIn: parent
       visible: root.open && root.images.length === 0
-      text: "no wallpapers in ~/wallpapers"
+      text: "no wallpapers in ~/Wallpapers"
       color: "#565a6e"
       font.family: "JetBrainsMono Nerd Font"
       font.pixelSize: 14

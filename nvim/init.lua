@@ -104,9 +104,10 @@ vim.opt.softtabstop = 2
 vim.opt.autoindent = true
 vim.opt.smartindent = true
 vim.opt.ignorecase = true
+
 vim.opt.list = true
 -- vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣", }
-vim.opt.clipboard = "unnamedplus" -- use system clipboard
+-- vim.opt.clipboard = "unnamedplus" -- use system clipboard
 vim.opt.termguicolors = true
 vim.opt.wildmenu = true
 vim.opt.wildmode = "longest:full,full"
@@ -131,6 +132,8 @@ vim.keymap.set("n", "<leader>x", function()
   vim.cmd("copen")
 end, { silent = true })
 
+vim.keymap.set("v", "<C-Space>", '"+y', { desc = "Copy to system clipboard" })
+vim.keymap.set("n", "<C-Space>", '"+p', { desc = "Paste from system clipboard" })
 vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "NetRW" })
 vim.keymap.set("n", "<leader>so", "<cmd>source %<CR>", { desc = "Source Current File" })
 vim.keymap.set("n", "<leader>q", "<cmd>close<CR>", { desc = "Close Window" })
