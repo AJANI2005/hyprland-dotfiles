@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-pick() { fuzzel --dmenu -p "$1 > "; }
+pick() { fuzzel --dmenu --width=60 -p "$1 > "; }
 run()  { foot --app-id=package-tui bash -c "$1; printf '\nPress any key to close...'; read -rsn1"; }
 get()  { local ref="$1[$2]"; echo "${!ref}"; }
 
@@ -17,6 +17,14 @@ declare -A CLEANUP=(
   [aur]='paru -Sc'
   [flatpak]='flatpak uninstall --unused'
 )
+declare -A INSTALLED=([pacman]='pacman -Qq' [aur]='pacman -Qqm' [flatpak]='flatpak list --app --columns=application')
+
+# Prefix each search result with ✓ (installed) or ✗ (not installed)
+mark() {
+  awk -v inst="$(${INSTALLED[$1]})" '
+    BEGIN { n = split(inst, a, "\n"); for (i = 1; i <= n; i++) seen[a[i]] = 1 }
+    { print (($1 in seen) ? "✓ " : "✗ ") $0 }'
+}
 
 while :; do
   action=$(printf '%s\n' "󰐕 Install" "󰆴 Uninstall" "󰚰 Update" "󰩹 Clean up" | pick Action) || exit
@@ -38,7 +46,8 @@ while :; do
 
     install)
       query=; [[ $manager == pacman ]] || { query=$(pick "Search $manager" </dev/null) && [[ $query ]] || continue; }
-      package=$(${SEARCH[$manager]} "$query" | pick Install) || continue
+      package=$(${SEARCH[$manager]} "$query" | mark "$manager" | pick Install) || continue
+      package=${package#* }                                  # drop the ✓/✗ marker
       package=${package#*/}; package=${package%%[[:space:]]*}
       run "$(get INFO $manager) $package; read -rp 'Install $package? [Y/n] ' reply; [[ \${reply,,} != n ]] && $(get INSTALL $manager) $package" ;;
 
