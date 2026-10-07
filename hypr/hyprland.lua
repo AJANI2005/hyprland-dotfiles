@@ -206,5 +206,9 @@ hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 1.5, bezier = "alm
 hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1.3, bezier = "almostLinear" })
 hl.animation({ leaf = "workspaces", enabled = false })
 
+
+-- Urgent Window Checker
+require("urgent")
 -- Added by hyprmoncfg: its generated monitor rules load last, so nothing before this can override the applied layout.
 do local path = os.getenv("HOME") .. "/.config/hypr/hyprmoncfg-monitors.lua"; local file = io.open(path, "r"); if file then file:close(); dofile(path) end end
+

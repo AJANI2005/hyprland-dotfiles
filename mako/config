@@ -17,6 +17,9 @@ max-icon-size=48
 icon-location=left
 markup=1
 format=<b>%s</b>\n%b
+actions=1
+on-button-left=invoke-default-action
+on-button-right=dismiss
 
 [urgency=low]
 background-color=#0f0f11
