@@ -16,6 +16,15 @@ hl.permission({
   mode = "allow",
 })
 
+-- Drawing Tablet
+hl.device({
+    name = "tablet-monitor-pen",
+    output = "HDMI-A-1",
+    relative_input = false,
+    left_handed = false,
+    transform = 0,
+})
+
 
 -- Monitors
 hl.monitor({output="",mode="preferred",position="auto",scale="auto"})
@@ -120,6 +129,8 @@ hl.bind(mainMod.." + k",hl.dsp.focus({direction="up"})); hl.bind(mainMod.." + j"
 -- Move windows
 hl.bind(mainMod.." + SHIFT + h",hl.dsp.window.move({direction="left"})); hl.bind(mainMod.." + SHIFT + l",hl.dsp.window.move({direction="right"}))
 hl.bind(mainMod.." + SHIFT + j",hl.dsp.window.move({direction="down"})); hl.bind(mainMod.." + SHIFT + k",hl.dsp.window.move({direction="up"}))
+hl.bind(mainMod.." + SHIFT + left",hl.dsp.window.move({direction="left"})); hl.bind(mainMod.." + SHIFT + right",hl.dsp.window.move({direction="right"}))
+hl.bind(mainMod.." + SHIFT + down",hl.dsp.window.move({direction="down"})); hl.bind(mainMod.." + SHIFT + up",hl.dsp.window.move({direction="up"}))
 
 -- Layout
 hl.bind(mainMod.." + T",function()
@@ -184,3 +195,6 @@ hl.animation({ leaf = "layersOut", enabled = true, speed = 1.5, bezier = "linear
 hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 1.5, bezier = "almostLinear" })
 hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1.3, bezier = "almostLinear" })
 hl.animation({ leaf = "workspaces", enabled = false })
+
+-- Added by hyprmoncfg: its generated monitor rules load last, so nothing before this can override the applied layout.
+do local path = os.getenv("HOME") .. "/.config/hypr/hyprmoncfg-monitors.lua"; local file = io.open(path, "r"); if file then file:close(); dofile(path) end end
