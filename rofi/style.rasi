@@ -1,0 +1,72 @@
+* {
+  bg:      #0b0b0b;
+  fg:      #cfcfcf;
+  dim:     #5a5a5a;
+  accent:  #f87171;
+  selfg:   #fca5a5;
+
+  font: "JetBrains Mono Nerd Font 16";
+  background-color: transparent;
+  text-color: @fg;
+}
+
+window {
+  location: center;
+  anchor: center;
+  width: 34ch;
+  background-color: @bg;
+  border: 4px;
+  border-color: @accent;
+  border-radius: 0px;
+}
+
+mainbox {
+  padding: 30px;
+  spacing: 20px;
+  children: [inputbar, listview];
+}
+
+inputbar {
+  children: [entry];
+}
+
+entry {
+  expand: true;
+  placeholder: "Apps";
+  placeholder-color: @dim;
+}
+
+num-filtered-rows, textbox-num-sep, num-rows {
+  expand: false;
+  text-color: @dim;
+}
+
+textbox-num-sep {
+  str: "/";
+}
+
+listview {
+  lines: 10;
+  scrollbar: false;
+  fixed-height: true;
+}
+
+element {
+  padding: 10px;
+  spacing: 12px;
+}
+
+element selected.normal {
+  text-color: @selfg;
+}
+
+element-icon {
+  size: 32px;
+}
+
+element-text {
+  text-color: inherit;
+  highlight: bold #f87171;
+  vertical-align: 0.5;
+}
+

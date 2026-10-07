@@ -1,0 +1,28 @@
+@theme "~/.config/rofi/style.rasi"
+configuration {
+  matching: "fuzzy";
+  case-sensitive: false;
+  case-smart: true;
+  no-custom: true;
+  sort: true;
+  sorting-method: "fzf";
+
+  /* keybinds */
+  kb-accept-entry: "Return,KP_Enter";
+  kb-row-down: "Down,Control+n,Control+j,Tab";
+  kb-row-up: "Up,Control+p,Control+k,ISO_Left_Tab";
+  kb-row-first: "Home,KP_Home,Control+Home";
+  kb-row-last: "End,KP_End,Control+End";
+  kb-element-next: "";
+  kb-element-prev: "";
+  kb-remove-to-eol: "";
+  kb-clear-line: "";
+  kb-secondary-copy: "";
+  kb-remove-word-back: "Control+BackSpace,Control+w";
+  kb-remove-to-sol: "Control+u";
+  kb-cancel: "Escape,Control+c,Control+g";
+
+  /* mouse: wheel scrolls by default, single click accepts */
+  me-select-entry: "";
+  me-accept-entry: "MousePrimary";
+}

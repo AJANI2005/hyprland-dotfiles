@@ -1,5 +1,12 @@
 -- Programs
 local terminal="foot"
+local launcher="rofi -show-icons -show drun"
+
+local finder = [[rofi -show find \
+  -kb-custom-1 "Alt+Return" -kb-custom-2 "Alt+c" \
+  -modi find:$HOME/dotfiles/rofi/finder.sh \
+  -theme-str 'window { width: 60ch; } entry { placeholder: "Find"; }']]
+
 local browser="librewolf"
 local files="thunar"
 local screenshot_region=[[grim -g "$(slurp)" - | swappy -f -]];
@@ -70,7 +77,8 @@ hl.config({
     master={new_status="master"},
     scrolling={fullscreen_on_one_column=true},
     input={kb_layout="us",repeat_rate=25,repeat_delay=300,
-    follow_mouse=1,sensitivity=0,touchpad={natural_scroll=true}},
+    follow_mouse=1,sensitivity=0,
+    touchpad={natural_scroll=true}},
     misc={disable_splash_rendering=true,force_default_wallpaper=1,disable_hyprland_logo=true,
     mouse_move_enables_dpms=true,key_press_enables_dpms=true}
 })
@@ -85,7 +93,9 @@ hl.bind(mainMod.." + SHIFT + C",hl.dsp.exec_cmd(browser .. " --new-window https:
 
 
 -- Menus
-hl.bind(mainMod.." + Space",hl.dsp.exec_cmd("fuzzel"))
+hl.bind(mainMod.." + Space",hl.dsp.exec_cmd(launcher))
+hl.bind(mainMod.." + SHIFT + Space",hl.dsp.exec_cmd(finder))
+
 hl.bind(mainMod.." + V",hl.dsp.exec_cmd("~/dotfiles/menus/clipboard.sh"))
 hl.bind(mainMod.." + SHIFT + P",hl.dsp.exec_cmd("~/dotfiles/menus/power.sh"))
 hl.bind(mainMod.." + SHIFT + W",hl.dsp.exec_cmd("qs ipc call wallpapers toggle"))
@@ -158,7 +168,7 @@ hl.bind("XF86AudioPrev",hl.dsp.exec_cmd("playerctl previous"),{locked=true})
 -- Window Rules
 hl.window_rule({name="suppress-maximize-events",match={class=".*"},suppress_event="maximize"})
 hl.window_rule({name="fix-xwayland-drags",match={class="^$",title="^$",xwayland=true,float=true,fullscreen=false,pin=false},no_focus=true})
-hl.window_rule({name="floating-utilities",match={class="^(org.gnome.Calculator|thunar|mpv|blueman-manager|com.saivert.pwvucontrol)$"},float=true,pin=true})
+hl.window_rule({name="floating-utilities",match={class="^(org.gnome.Calculator|Thunar|mpv|blueman-manager|com.saivert.pwvucontrol)$"},float=true,pin=true})
 hl.window_rule({name="picture-in-picture",match={title="^(Picture-in-Picture)$"},float=true,pin=true,size={400,400}})
 hl.window_rule({ match={class="^(btop|hyprmon)$"},float=true,pin=true,size={1440,900}})
 

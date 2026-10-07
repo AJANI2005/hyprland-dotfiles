@@ -3,6 +3,8 @@
 thumbs="${XDG_RUNTIME_DIR:-/tmp}/cliphist-thumbs"
 mkdir -p "$thumbs"
 
+menu="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/menu.sh"
+
 cliphist list | while IFS=$'\t' read -r id preview; do
   if [[ "$preview" =~ ^\[\[\ binary\ data\ .*(png|jpg|jpeg|bmp|gif|webp) ]]; then
     f="$thumbs/$id.${BASH_REMATCH[1]}"
@@ -11,4 +13,4 @@ cliphist list | while IFS=$'\t' read -r id preview; do
   else
     printf '%s\t%s\n' "$id" "$preview"
   fi
-done | fuzzel --dmenu --placeholder "Clipboard" --width 60 --lines 5 --line-height 48 | cliphist decode | wl-copy
+done | "$menu" -p Clipboard -w 60 -l 5 -i 64 | cliphist decode | wl-copy

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -u
 
-pick() { fuzzel --dmenu --width=60 -p "$1 > "; }
+menu="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/menu.sh"
+pick() { "$menu" -w 30 -p "$1"; }
+
 run()  { foot --app-id=package-tui bash -c "$1; printf '\nPress any key to close...'; read -rsn1"; }
 get()  { local ref="$1[$2]"; echo "${!ref}"; }
 

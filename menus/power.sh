@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+menu="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/menu.sh"
+
 choice=$(
   printf '%s\n' \
     '󰌾  Lock' \
@@ -8,7 +10,7 @@ choice=$(
     '󰒲  Suspend' \
     '󰤄  Hibernate' \
     '󰍃  Logout' |
-    fuzzel --dmenu --prompt='Power > ' --lines=6
+    "$menu" -p Power -l 6
 ) || exit 0
 
 case "$choice" in
