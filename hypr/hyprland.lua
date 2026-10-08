@@ -2,10 +2,7 @@
 local terminal="foot"
 local launcher="rofi -show-icons -show drun"
 
-local finder = [[rofi -show find \
-  -kb-custom-1 "Alt+Return" -kb-custom-2 "Alt+c" \
-  -modi find:$HOME/dotfiles/rofi/finder.sh \
-  -theme-str 'window { width: 60ch; } entry { placeholder: "Find"; }']]
+local finder = [[ foot --app-id finder -e ~/dotfiles/menus/finder.sh ]]
 
 local browser="librewolf"
 local files="thunar"
@@ -59,6 +56,9 @@ hl.on("hyprland.start",function()
   -- Clipboard
   hl.exec_cmd("wl-paste --type text --watch cliphist store")
   hl.exec_cmd("wl-paste --type image --watch cliphist store")
+
+  hl.exec_cmd("dbus-update-activation-environment --all")
+  hl.exec_cmd("gnome-keyring-demon --start --components=secrets")
 end)
 
 -- Look & Feel
@@ -168,7 +168,7 @@ hl.bind("XF86AudioPrev",hl.dsp.exec_cmd("playerctl previous"),{locked=true})
 -- Window Rules
 hl.window_rule({name="suppress-maximize-events",match={class=".*"},suppress_event="maximize"})
 hl.window_rule({name="fix-xwayland-drags",match={class="^$",title="^$",xwayland=true,float=true,fullscreen=false,pin=false},no_focus=true})
-hl.window_rule({name="floating-utilities",match={class="^(org.gnome.Calculator|Thunar|mpv|blueman-manager|com.saivert.pwvucontrol)$"},float=true,pin=true})
+hl.window_rule({name="floating-utilities",match={class="^(finder|org.gnome.Calculator|thunar|mpv|blueman-manager|com.saivert.pwvucontrol)$"},float=true,pin=true})
 hl.window_rule({name="picture-in-picture",match={title="^(Picture-in-Picture)$"},float=true,pin=true,size={400,400}})
 hl.window_rule({ match={class="^(btop|hyprmon)$"},float=true,pin=true,size={1440,900}})
 

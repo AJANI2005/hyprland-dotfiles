@@ -6,6 +6,7 @@ configuration {
   no-custom: true;
   sort: true;
   sorting-method: "fzf";
+  scroll-method: 1;
 
   /* keybinds */
   kb-accept-entry: "Return,KP_Enter";
