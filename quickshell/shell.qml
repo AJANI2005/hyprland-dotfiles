@@ -107,8 +107,7 @@ PanelWindow {
         tip: "Workspace " + id
         col: Hyprland.focusedWorkspace?.id === id ? root.red
            : Hyprland.workspaces.values.some(w => w.id === id) ? root.fg : root.dim
-        onClicked: Hyprland.dispatch("workspace " + id)
-      }
+        onClicked: Hyprland.dispatch("hl.dsp.focus({ workspace = " + id + " })")      }
     }
   }
 

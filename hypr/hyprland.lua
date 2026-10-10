@@ -168,14 +168,15 @@ hl.bind("XF86AudioPrev",hl.dsp.exec_cmd("playerctl previous"),{locked=true})
 -- Window Rules
 hl.window_rule({name="suppress-maximize-events",match={class=".*"},suppress_event="maximize"})
 hl.window_rule({name="fix-xwayland-drags",match={class="^$",title="^$",xwayland=true,float=true,fullscreen=false,pin=false},no_focus=true})
-hl.window_rule({name="floating-utilities",match={class="^(finder|org.gnome.Calculator|thunar|mpv|blueman-manager|com.saivert.pwvucontrol)$"},float=true,pin=true})
-hl.window_rule({name="picture-in-picture",match={title="^(Picture-in-Picture)$"},float=true,pin=true,size={400,400}})
-hl.window_rule({ match={class="^(btop|hyprmon)$"},float=true,pin=true,size={1440,900}})
 
 
-hl.window_rule({ match={class="^(tui-package.sh)$"},float=true,pin=true,size={1200,600}})
-hl.window_rule({ match={class="^(tui-apps.sh)$"},float=true,pin=true,size={500,800}})
-hl.window_rule({ match={class="^(tui-power.sh)$"},float=true,pin=true,size={300,300}})
+hl.window_rule({name="floating-utilities",match={class="^(finder|org.gnome.Calculator|thunar|mpv|blueman-manager|com.saivert.pwvucontrol)$"},float=true,pin=false})
+hl.window_rule({name="picture-in-picture",match={title="^(Picture-in-Picture)$"},float=true,size={400,400}})
+hl.window_rule({ match={class="^(btop|hyprmon|thunar)$"},float=true,size={1440,900}})
+
+hl.window_rule({ match={class="^(tui-package.sh)$"},float=true,size={1200,600}})
+hl.window_rule({ match={class="^(tui-apps.sh)$"},float=true,size={500,800}})
+hl.window_rule({ match={class="^(tui-power.sh)$"},float=true,size={300,300}})
 
 -- Match bluetui,mimetui etc
 hl.window_rule({name="floating-tuis",match={class="^(.*tui.*)$"},float=true,pin=true})

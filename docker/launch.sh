@@ -10,7 +10,12 @@ docker-compose -f "$SCRIPT_DIR/windows.yml" up -d
 sleep 5
 
 xfreerdp3 /u:"$username" /p:"$password" /v:"$ip" \
-  /dynamic-resolution /clipboard /gfx:avc444
+  /dynamic-resolution \
+  /clipboard \
+  /gfx:avc444 \
+  /audio-mode:0 \
+  /microphone
+
 
 read -rp "Keep Windows container running? [y/N] " answer
 
