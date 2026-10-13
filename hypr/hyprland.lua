@@ -179,7 +179,7 @@ hl.window_rule({ match={class="^(tui-apps.sh)$"},float=true,size={500,800}})
 hl.window_rule({ match={class="^(tui-power.sh)$"},float=true,size={300,300}})
 
 -- Match bluetui,mimetui etc
-hl.window_rule({name="floating-tuis",match={class="^(.*tui.*)$"},float=true,pin=true})
+hl.window_rule({name="floating-tuis",match={class="^(.*tui.*)$"},float=true,pin=false})
 
 
 

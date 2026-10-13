@@ -53,7 +53,7 @@ PanelWindow {
       echo "$(wpctl get-volume @DEFAULT_AUDIO_SINK@)"
       echo "$(brightnessctl -m | cut -d, -f4)"
       echo $(cat /sys/class/power_supply/BAT*/{capacity,status} | head -2)
-      echo "$(nmcli -t -f TYPE,NAME connection show --active | grep -E '^(802-11-wireless|ethernet)' | head -1)"
+      echo "$(nmcli -t -f TYPE,STATE,CONNECTION device status | grep -E '^(ethernet|wifi):connected' | sort | head -1 | sed -E 's/^(ethernet|wifi):connected[^:]*:/\\1:/')"
       echo "$(nmcli -t -f IN-USE,SIGNAL dev wifi | sed -n 's/^[*]://p')"
       bluetoothctl show | grep -q 'Powered: yes' && { bluetoothctl devices Connected | grep -q . && echo 2 || echo 1; } || echo 0
       pgrep -x hypridle >/dev/null && echo 0 || echo 1

@@ -2,12 +2,12 @@
 set -u
 
 menu="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/menu.sh"
-pick() { "$menu" -w 30 -p "$1"; }
+pick() { "$menu" -w 40 -p "$1"; }
 
 run()  { foot --app-id=package-tui bash -c "$1; printf '\nPress any key to close...'; read -rsn1"; }
 get()  { local ref="$1[$2]"; echo "${!ref}"; }
 
-declare -A SEARCH=([pacman]='pacman -Ssq' [aur]='paru -Ssaq' [flatpak]='flatpak search --columns=application,name')
+declare -A SEARCH=([pacman]='pacman -Ssq' [aur]='paru -Ssaq' [flatpak]='flatpak remote-ls flathub --app --columns=application,name')
 declare -A LIST=([pacman]='pacman -Qqe' [aur]='paru -Qmq' [flatpak]='flatpak list --app --columns=application')
 declare -A INFO=([pacman]='pacman -Si' [aur]='paru -Si' [flatpak]='flatpak remote-info flathub')
 declare -A QINFO=([pacman]='pacman -Qi' [aur]='paru -Qi' [flatpak]='flatpak info')
@@ -47,8 +47,12 @@ while :; do
       run "$command" ;;
 
     install)
-      query=; [[ $manager == pacman ]] || { query=$(pick "Search $manager" </dev/null) && [[ $query ]] || continue; }
-      package=$(${SEARCH[$manager]} "$query" | mark "$manager" | pick Install) || continue
+      # Only the AUR needs a query up front; pacman and flatpak list everything
+      query=
+      if [[ $manager == aur ]]; then
+        query=$(pick "Search aur" </dev/null) && [[ $query ]] || continue
+      fi
+      package=$(${SEARCH[$manager]} ${query:+"$query"} | mark "$manager" | pick Install) || continue
       package=${package#* }                                  # drop the ✓/✗ marker
       package=${package#*/}; package=${package%%[[:space:]]*}
       run "$(get INFO $manager) $package; read -rp 'Install $package? [Y/n] ' reply; [[ \${reply,,} != n ]] && $(get INSTALL $manager) $package" ;;
