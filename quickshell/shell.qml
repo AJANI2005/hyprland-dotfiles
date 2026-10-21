@@ -9,6 +9,7 @@ import "panels"
 PanelWindow {
   id: root
 
+  OSD {}
   WallpaperSwitcher {}
 
   anchors { bottom: true; left: true; right: true }
@@ -160,13 +161,6 @@ PanelWindow {
       }
     }
 
-    Btn {  // volume
-      visible: false
-      text: root.muted ? "󰝟" : ["󰕿", "󰖀", "󰕾"][Math.min(2, root.vol / 33 | 0)]
-      col: root.muted ? root.red : root.fg
-      tip: root.muted ? "Volume muted" : "Volume: " + root.vol + "%"
-      onClicked: Quickshell.execDetached(["pwvucontrol"])
-    }
     Btn {  // brightness
       visible: false
       text: ["󰃚", "󰃛", "󰃜", "󰃝", "󰃞", "󰃟", "󰃠"][Math.min(6, root.bri / 15 | 0)]
@@ -176,6 +170,13 @@ PanelWindow {
       text: "󰅇"
       tip: "Clipboard history"
       onClicked: root.run("bash", "-c", "~/dotfiles/menus/clipboard.sh")
+    }
+    Btn {  // volume
+      visible: true
+      text: root.muted ? "󰝟" : ["󰕿", "󰖀", "󰕾"][Math.min(2, root.vol / 33 | 0)]
+      col: root.muted ? root.red : root.fg
+      tip: root.muted ? "Volume muted" : "Volume: " + root.vol + "%"
+      onClicked: Quickshell.execDetached(["pwvucontrol"])
     }
     Btn {  // network
       text: !root.net ? "󰤭" : root.eth ? "󰈀" : ["󰤟", "󰤢", "󰤥", "󰤨"][Math.min(3, root.sig / 25 | 0)]
