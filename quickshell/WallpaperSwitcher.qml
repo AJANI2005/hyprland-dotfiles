@@ -317,8 +317,8 @@ Item {
 
                 ShapePath {
                   fillColor: "transparent"
-                  strokeColor: cell.selected ? "#7aa2f7" : "#565a6e"
-                  strokeWidth: cell.selected ? 2 : 1
+                  strokeColor: cell.selected ? "#f87171" : "#aaf87171"
+                  strokeWidth: cell.selected ? 4 : 2
                   startX: cell.topLeft; startY: 0
                   PathLine { x: cell.topRight; y: 0 }
                   PathLine { x: cell.bottomRight; y: cell.height }

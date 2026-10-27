@@ -14,6 +14,7 @@ declare -A QINFO=([pacman]='pacman -Qi' [aur]='paru -Qi' [flatpak]='flatpak info
 declare -A INSTALL=([pacman]='sudo pacman -S' [aur]='paru -S' [flatpak]='flatpak install')
 declare -A REMOVE=([pacman]='sudo pacman -Rns' [aur]='paru -Rns' [flatpak]='flatpak uninstall')
 declare -A UPDATE=([pacman]='sudo pacman -Syu' [aur]='paru -Sua' [flatpak]='flatpak update')
+declare -A UNATTENDED=([pacman]='sudo pacman -Syu --noconfirm' [aur]='paru -Sua --noconfirm' [flatpak]='flatpak update -y')
 declare -A CLEANUP=(
   [pacman]='orphans=$(pacman -Qdtq); if [[ $orphans ]]; then sudo pacman -Rns $orphans; else echo "No orphan packages."; fi'
   [aur]='paru -Sc'
@@ -34,16 +35,20 @@ while :; do
 
   options=("󰮯 Pacman" "󰊢 AUR" "󰏗 Flatpak")
   [[ $action == update || $action == cleanup ]] && options+=("󰋙 All")
+  [[ $action == update ]] && options+=("󰁯 Unattended")
   manager=$(printf '%s\n' "${options[@]}" | pick "${action^}") || continue
   manager=${manager#* }; manager=${manager,,}
 
   case $action in
     update|cleanup)
-      if [[ $manager == all ]]; then
-        command=; for each in pacman aur flatpak; do command+="${command:+; }$(get "${action^^}" $each)"; done
-      else
-        command=$(get "${action^^}" $manager)
-      fi
+      case $manager in
+        all)
+          command=; for each in pacman aur flatpak; do command+="${command:+; }$(get "${action^^}" $each)"; done ;;
+        unattended)
+          command=; for each in pacman aur flatpak; do command+="${command:+; }$(get UNATTENDED $each)"; done ;;
+        *)
+          command=$(get "${action^^}" $manager) ;;
+      esac
       run "$command" ;;
 
     install)
